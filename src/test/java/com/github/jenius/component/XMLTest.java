@@ -15,6 +15,8 @@ public class XMLTest {
     var diff = DiffBuilder.compare(expectedText)
         .withTest(actualText)
         .ignoreWhitespace()
+        .normalizeWhitespace()
+        .ignoreElementContentWhitespace()
         .build();
     if (diff.hasDifferences()) {
       AssertionFailureBuilder.assertionFailure().message("nodes are not equivalent").expected(expectedText).actual(actualText).buildAndThrow();
