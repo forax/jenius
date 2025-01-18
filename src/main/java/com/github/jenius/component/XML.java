@@ -17,7 +17,6 @@ import org.xml.sax.helpers.XMLFilterImpl;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
@@ -35,7 +34,7 @@ public class XML {
 
   private static abstract class SaxNodeAdapater implements NodeBuilder {
     @Override
-    public final NodeBuilder node(String name, Map<? extends String, ?> map, Consumer<? super NodeBuilder> children) {
+    public final NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
       try {
         saxEvent(name, map, children);
       } catch (SAXException e) {
@@ -44,7 +43,7 @@ public class XML {
       return this;
     }
 
-    abstract void saxEvent(String name, Map<? extends String, ?> map, Consumer<? super NodeBuilder> children) throws SAXException;
+    abstract void saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
   private static XMLFilterImpl filter(XMLReader xmlReader, ComponentStyle style) {
@@ -54,7 +53,7 @@ public class XML {
       private NodeBuilder rewritingNodeBuilder(String oldName) {
         return new SaxNodeAdapater() {
           @Override
-          public void saxEvent(String name, Map<? extends String, ?> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public void saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
             var contentHandler = getContentHandler();
             if (contentHandler != null) {
               contentHandler.startElement("", name, name, AttributesUtil.asAttributes(map));
@@ -68,7 +67,7 @@ public class XML {
       private NodeBuilder delegatingNodeBuilder() {
         return new SaxNodeAdapater() {
           @Override
-          public void saxEvent(String name, Map<? extends String, ?> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public void saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
             startElement("", name, name, AttributesUtil.asAttributes(map));
             children.accept(this);
             endElement("", name, name);

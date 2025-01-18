@@ -16,24 +16,7 @@ final class AttributesUtil {
     throw new AssertionError();
   }
 
-  private static Object asValue(String s) {
-    return switch (s) {
-      case "true", "false" -> Boolean.valueOf(s);
-      default -> {
-        try {
-          yield Double.parseDouble(s);
-        } catch (NumberFormatException _) {
-          try {
-            yield Integer.parseInt(s);
-          } catch (NumberFormatException _) {
-            yield s;
-          }
-        }
-      }
-    };
-  }
-
-  private static final class AttributeMap extends AbstractMap<String, Object> {
+  private static final class AttributeMap extends AbstractMap<String, String> {
     private final Attributes attributes;
 
     private AttributeMap(Attributes attributes) {
@@ -41,7 +24,7 @@ final class AttributesUtil {
     }
 
     @Override
-    public Set<Entry<String, Object>> entrySet() {
+    public Set<Entry<String, String>> entrySet() {
       return new AbstractSet<>() {
         @Override
         public int size() {
@@ -49,7 +32,7 @@ final class AttributesUtil {
         }
 
         @Override
-        public Iterator<Entry<String, Object>> iterator() {
+        public Iterator<Entry<String, String>> iterator() {
           return new Iterator<>() {
             private int index;
 
@@ -59,12 +42,12 @@ final class AttributesUtil {
             }
 
             @Override
-            public Entry<String, Object> next() {
+            public Entry<String, String> next() {
               if (!hasNext()) {
                 throw new NoSuchElementException();
               }
               var key = attributes.getLocalName(index);
-              var value = asValue(attributes.getValue(index));
+              var value = attributes.getValue(index);
               index++;
               return Map.entry(key, value);
             }
@@ -81,36 +64,36 @@ final class AttributesUtil {
     @Override
     public boolean containsKey(Object key) {
       Objects.requireNonNull(key);
-      return attributes.getIndex(null, key.toString()) != -1;
+      return attributes.getIndex("", key.toString()) != -1;
     }
 
     @Override
-    public Object getOrDefault(Object key, Object defaultValue) {
+    public String getOrDefault(Object key, String defaultValue) {
       Objects.requireNonNull(key);
-      var index = attributes.getIndex(null, key.toString());
+      var index = attributes.getIndex("", key.toString());
       if (index == -1) {
         return defaultValue;
       }
-      return asValue(attributes.getValue(index));
+      return attributes.getValue(index);
     }
 
     @Override
-    public Object get(Object key) {
+    public String get(Object key) {
       return getOrDefault(key, null);
     }
   }
 
-  public static Map<String, Object> asMap(Attributes attribute) {
+  public static Map<String, String> asMap(Attributes attribute) {
     return new AttributeMap(attribute);
   }
 
-  public static Attributes asAttributes(Map<? extends String, ?> map) {
+  public static Attributes asAttributes(Map<String, String> map) {
     if (map instanceof AttributeMap attributeMap) {
       return attributeMap.attributes;
     }
     var attributes = new AttributesImpl();
     map.forEach((key, value) -> {
-      attributes.addAttribute("", key, key, "CDATA", value.toString());
+      attributes.addAttribute("", key, key, "CDATA", value);
     });
     return attributes;
   }

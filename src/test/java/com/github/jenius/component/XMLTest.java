@@ -9,26 +9,21 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.diff.Diff;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Map;
 
 public class XMLTest {
-  private static Document domDocument(String text) throws ParserConfigurationException, IOException, SAXException {
-    var factory = DocumentBuilderFactory.newInstance();
-    factory.setNamespaceAware(true);
-    factory.setCoalescing(true);
-    factory.setIgnoringElementContentWhitespace(true);
-    factory.setIgnoringComments(true);
-    var builder = factory.newDocumentBuilder();
-    return builder.parse(new InputSource(new StringReader(text)));
-  }
-
   private static void assertSameDocument(String expectedText, String actualText) throws ParserConfigurationException, IOException, SAXException {
-    var expectedDocument = domDocument(expectedText);
-    var actualDocument = domDocument(actualText);
-    if (!expectedDocument.isEqualNode(actualDocument)) {
+    var diff = DiffBuilder.compare(expectedText)
+        .withTest(actualText)
+        .ignoreWhitespace()
+        .build();
+    if (diff.hasDifferences()) {
       AssertionFailureBuilder.assertionFailure().message("nodes are not equivalent").expected(expectedText).actual(actualText).buildAndThrow();
     }
   }
@@ -55,12 +50,37 @@ public class XMLTest {
   }
 
   @Test
+  public void replaceNodeWithChildren() throws IOException, ParserConfigurationException, SAXException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <section>
+          <paragraph>
+            This is a test
+          </paragraph>
+        </section>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <div>
+          <paragraph>
+            This is a test
+          </paragraph>
+        </div>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "section", (_, attrs, b) -> b.node("div", attrs));
+    XML.transform(new StringReader(input), style, writer);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
   public void replaceUsingAttributes() throws IOException, ParserConfigurationException, SAXException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <list style="ordered">
           <item>This is a test</item>
-        </paragraph>
+        </list>
         """;
     var expected = """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -96,7 +116,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.alwaysMatch(
-        (name, _, b) -> b.node(name, "draft", true));
+        (name, _, b) -> b.node(name, "draft", "true"));
     XML.transform(new StringReader(input), style, writer);
     assertSameDocument(expected, writer.toString());
   }
