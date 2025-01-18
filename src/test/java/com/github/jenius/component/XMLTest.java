@@ -2,15 +2,8 @@ package com.github.jenius.component;
 
 import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.xmlunit.builder.DiffBuilder;
-import org.xmlunit.diff.Diff;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -18,7 +11,7 @@ import java.io.StringWriter;
 import java.util.Map;
 
 public class XMLTest {
-  private static void assertSameDocument(String expectedText, String actualText) throws ParserConfigurationException, IOException, SAXException {
+  private static void assertSameDocument(String expectedText, String actualText) {
     var diff = DiffBuilder.compare(expectedText)
         .withTest(actualText)
         .ignoreWhitespace()
@@ -29,7 +22,7 @@ public class XMLTest {
   }
 
   @Test
-  public void replaceNode() throws IOException, ParserConfigurationException, SAXException {
+  public void replaceNode() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <paragraph>
@@ -50,7 +43,7 @@ public class XMLTest {
   }
 
   @Test
-  public void replaceNodeWithChildren() throws IOException, ParserConfigurationException, SAXException {
+  public void replaceNodeWithChildren() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <section>
@@ -75,7 +68,7 @@ public class XMLTest {
   }
 
   @Test
-  public void replaceUsingAttributes() throws IOException, ParserConfigurationException, SAXException {
+  public void replaceUsingAttributes() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <list style="ordered">
@@ -101,7 +94,7 @@ public class XMLTest {
   }
 
   @Test
-  public void setAnAttribute() throws IOException, ParserConfigurationException, SAXException {
+  public void setAnAttribute() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <exercise>
