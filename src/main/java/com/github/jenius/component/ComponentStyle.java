@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+@FunctionalInterface
 public interface ComponentStyle {
   Optional<Component> lookup(String name);
 
