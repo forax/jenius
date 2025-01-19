@@ -96,6 +96,79 @@ public class XMLTest {
   }
 
   @Test
+  public void replaceNodeByANodeAndAText() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <bar>
+          This is a test
+        </bar>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "foo", (_, _, b) -> {
+          b.node("bar")
+              .text("This is a test");
+        }
+    );
+    XML.transform(new StringReader(input), style, writer);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void replaceNodeByAText() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+         <bar>
+         </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          This is a test
+        </foo>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "bar", (_, _, b) -> b.text("This is a test")
+    );
+    XML.transform(new StringReader(input), style, writer);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void omitANode() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+         <bar>
+          <baz>
+          </baz>
+         </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <baz>
+          </baz>
+        </foo>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "bar", (name, attributes, nodeBuilder) -> {});
+    XML.transform(new StringReader(input), style, writer);
+    System.out.println(writer.toString());
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
   public void setAnAttribute() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -112,6 +185,39 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.alwaysMatch(
         (name, _, b) -> b.node(name, "draft", "true"));
+    XML.transform(new StringReader(input), style, writer);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void include() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <include>
+          </include>
+        </foo>
+        """;
+    var input2 = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <baz>
+          This is a text
+        </baz>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar>
+            <baz>
+              This is a text
+            </baz>
+          </bar>
+        </foo>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of("include",
+        (_, attrs, b) -> b.node("bar", attrs,
+              children -> XML.include(children, new StringReader(input2))));
     XML.transform(new StringReader(input), style, writer);
     assertSameDocument(expected, writer.toString());
   }

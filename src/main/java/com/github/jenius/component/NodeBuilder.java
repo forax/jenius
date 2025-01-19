@@ -3,8 +3,6 @@ package com.github.jenius.component;
 import java.util.Map;
 import java.util.function.Consumer;
 
-
-@FunctionalInterface
 public interface NodeBuilder {
   default NodeBuilder node(String name) {
     return node(name, CompactMap.of());
@@ -43,4 +41,6 @@ public interface NodeBuilder {
   }
 
   NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children);
+
+  NodeBuilder text(String text);
 }
