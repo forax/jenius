@@ -164,7 +164,6 @@ public class XMLTest {
     var style = ComponentStyle.of(
         "bar", (name, attributes, nodeBuilder) -> {});
     XML.transform(new StringReader(input), style, writer);
-    System.out.println(writer.toString());
     assertSameDocument(expected, writer.toString());
   }
 
@@ -217,7 +216,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of("include",
         (_, attrs, b) -> b.node("bar", attrs,
-              children -> XML.include(children, new StringReader(input2))));
+              children -> children.include(new StringReader(input2))));
     XML.transform(new StringReader(input), style, writer);
     assertSameDocument(expected, writer.toString());
   }

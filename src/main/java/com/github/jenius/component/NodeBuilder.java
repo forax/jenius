@@ -1,5 +1,6 @@
 package com.github.jenius.component;
 
+import java.io.Reader;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -43,4 +44,6 @@ public interface NodeBuilder {
   NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children);
 
   NodeBuilder text(String text);
+
+  NodeBuilder include(Reader reader);
 }

@@ -64,6 +64,12 @@ public class XML {
       return this;
     }
 
+    @Override
+    public final NodeBuilder include(Reader reader) {
+      XML.include(impl, reader);
+      return this;
+    }
+
     abstract NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
@@ -140,11 +146,7 @@ public class XML {
     };
   }
 
-  public static NodeBuilder include(NodeBuilder builder, Reader reader) {
-    if (!(builder instanceof SaxNodeAdapter saxNodeAdapter)) {
-      throw new IllegalArgumentException("not a well known builder");
-    }
-    var filter = saxNodeAdapter.impl;
+  private static void include(XMLFilterImpl filter, Reader reader) {
     var parserFactory = SAXParserFactory.newInstance();
     parserFactory.setNamespaceAware(true);
     try {
@@ -172,7 +174,6 @@ public class XML {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-    return builder;
   }
 
   public static void transform(Reader reader, ComponentStyle style, Writer writer) throws IOException {
@@ -189,8 +190,12 @@ public class XML {
       //transformer.setOutputProperty(OutputKeys.INDENT, "yes");
       var source = new SAXSource(filter(xmlReader, style), new InputSource(reader));
       transformer.transform(source, new StreamResult(writer));
-    } catch (SAXException | ParserConfigurationException | TransformerException e) {
+    } catch (ParserConfigurationException e) {
+      throw new IllegalStateException(e);
+    } catch (SAXException | TransformerException e) {
       throw new IOException(e);
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
     }
   }
 }
