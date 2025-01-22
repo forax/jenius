@@ -9,6 +9,10 @@ import java.util.Optional;
 public interface ComponentStyle {
   Optional<Component> lookup(String name);
 
+  default ComponentStyle ignoreAllOthers() {
+    return anyMatch(this, _ -> Optional.of(Component.ignore()));
+  }
+
   static ComponentStyle of(String name, Component component) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(component);
@@ -20,7 +24,7 @@ public interface ComponentStyle {
     return name -> Optional.ofNullable(componentMap.get(name));
   }
 
-  static ComponentStyle anyMatch(List<? extends ComponentStyle> styles) {
+  static ComponentStyle anyMatch(ComponentStyle... styles) {
     Objects.requireNonNull(styles);
     return name -> {
       for(var style : styles) {

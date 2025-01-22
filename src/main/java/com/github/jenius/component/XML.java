@@ -7,8 +7,8 @@ import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -42,12 +42,12 @@ public class XML {
     }
 
     @Override
-    public final NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
+    public final NodeBuilder node(String name, Map<String, String> map, UnaryOperator<String> withText, Consumer<? super NodeBuilder> children) {
       Objects.requireNonNull(name);
       Objects.requireNonNull(map);
       Objects.requireNonNull(children);
       try {
-        return saxEvent(name, map, children);
+        return saxEvent(name, map, withText, children);
       } catch (SAXException e) {
         throw new UncheckedSAXException(e);
       }
@@ -56,8 +56,9 @@ public class XML {
     @Override
     public final NodeBuilder text(String text) {
       Objects.requireNonNull(text);
+      var contentHandler = impl.getContentHandler();
       try {
-        impl.characters(text.toCharArray(), 0, text.length());
+        contentHandler.characters(text.toCharArray(), 0, text.length());
       } catch (SAXException e) {
         throw new UncheckedSAXException(e);
       }
@@ -70,32 +71,34 @@ public class XML {
       return this;
     }
 
-    abstract NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
+    abstract NodeBuilder saxEvent(String name, Map<String, String> map, UnaryOperator<String> withText, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
   private sealed interface Action {
-    enum Ignore implements Action { INSTANCE }
+    enum EnumAction implements Action { IGNORE, EMIT }
     record Replace(String newName) implements Action {}
+    record ReplaceWithText(String newName, StringBuilder text, UnaryOperator<String> change) implements Action {}
   }
 
   private static XMLFilterImpl filter(XMLReader xmlReader, ComponentStyle style) {
-    record Replacement(String name, Action action) {}
-    var replacementStack = new ArrayDeque<Replacement>();
+    var actionsStack = new ArrayDeque<Action>();
     return new XMLFilterImpl(xmlReader) {
       private NodeBuilder rewritingNodeBuilder() {
         return new SaxNodeAdapter(this) {
           private boolean calledOnce;
 
           @Override
-          public NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public NodeBuilder saxEvent(String name, Map<String, String> map, UnaryOperator<String>  withText, Consumer<? super NodeBuilder> children) throws SAXException {
             if (calledOnce) {
               throw new IllegalStateException("this builder has already called once");
             }
             calledOnce = true;
             var contentHandler = getContentHandler();
             contentHandler.startElement("", name, name, AttributesUtil.asAttributes(map));
-            var replacement = replacementStack.pop();
-            replacementStack.push(new Replacement(replacement.name, new Action.Replace(name)));
+            actionsStack.pop();
+            actionsStack.push( withText == null ?
+                new Action.Replace(name) :
+                new Action.ReplaceWithText(name, new StringBuilder(), withText));
             children.accept(delegatingNodeBuilder());
             return this;
           }
@@ -105,7 +108,10 @@ public class XML {
       private NodeBuilder delegatingNodeBuilder() {
         return new SaxNodeAdapter(this) {
           @Override
-          public NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public NodeBuilder saxEvent(String name, Map<String, String> map, UnaryOperator<String> withText, Consumer<? super NodeBuilder> children) throws SAXException {
+            if (withText != null) {
+              throw new IllegalArgumentException("only top level node can have a function withText");
+            }
             startElement("", name, name, AttributesUtil.asAttributes(map));
             children.accept(this);
             endElement("", name, name);
@@ -119,28 +125,41 @@ public class XML {
         var componentOpt = style.lookup(localName);
         if (componentOpt.isPresent()) {
           var component = componentOpt.orElseThrow();
-          replacementStack.push(new Replacement(localName, Action.Ignore.INSTANCE));
+          actionsStack.push(Action.EnumAction.IGNORE);
           try {
             component.render(localName, AttributesUtil.asMap(attrs), rewritingNodeBuilder());
           } catch (UncheckedSAXException e) {
             throw e.saxException;
           }
         } else {
+          actionsStack.push(Action.EnumAction.EMIT);
           super.startElement(uri, localName, qName, attrs);
         }
       }
 
       @Override
       public void endElement(String uri, String localName, String qName) throws SAXException {
-        var replacement = replacementStack.peek();
-        if (replacement != null && localName.equals(replacement.name)) {
-          replacementStack.pop();
-          switch (replacement.action) {
-            case Action.Ignore _ -> {}
-            case Action.Replace(String newName) -> super.endElement("", newName, newName);
+        var action = actionsStack.pop();
+        switch (action) {
+          case Action.EnumAction.IGNORE -> {}
+          case Action.EnumAction.EMIT -> super.endElement(uri, localName, qName);
+          case Action.Replace(String newName) -> super.endElement("", newName, newName);
+          case Action.ReplaceWithText(String newName, StringBuilder builder, UnaryOperator<String> withText) -> {
+           var newText = withText.apply(builder.toString());
+           super.characters(newText.toCharArray(), 0, newText.length());
+           super.endElement("", newName, newName);
           }
-        } else {
-          super.endElement(uri, localName, qName);
+        }
+      }
+
+      @Override
+      public void characters(char[] ch, int start, int length) throws SAXException {
+        var action = actionsStack.peek();
+        switch (action) {
+          case Action.EnumAction.IGNORE -> {}
+          case Action.EnumAction.EMIT -> super.characters(ch, start, length);
+          case Action.Replace _ -> super.characters(ch, start, length);
+          case Action.ReplaceWithText(_, StringBuilder builder, _) -> builder.append(ch, start, length);
         }
       }
     };
@@ -176,7 +195,7 @@ public class XML {
     }
   }
 
-  public static void transform(Reader reader, ComponentStyle style, Writer writer) throws IOException {
+  public static void transform(Reader reader, Writer writer, ComponentStyle style) throws IOException {
     Objects.requireNonNull(reader);
     Objects.requireNonNull(style);
     Objects.requireNonNull(writer);
@@ -187,7 +206,6 @@ public class XML {
       var xmlReader = parser.getXMLReader();
       var transformerFactory = (SAXTransformerFactory) TransformerFactory.newInstance();
       var transformer = transformerFactory.newTransformer();
-      //transformer.setOutputProperty(OutputKeys.INDENT, "yes");
       var source = new SAXSource(filter(xmlReader, style), new InputSource(reader));
       transformer.transform(source, new StreamResult(writer));
     } catch (ParserConfigurationException e) {
