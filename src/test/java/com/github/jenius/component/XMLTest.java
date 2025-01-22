@@ -143,25 +143,6 @@ public class XMLTest {
   }
 
   @Test
-  public void replaceWithText() throws IOException {
-    var input = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <foo>This is a text.</foo>
-        """;
-    var expected = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <foo>This is a text. And another one.</foo>
-        """;
-    var writer = new StringWriter();
-    var style = ComponentStyle.of(
-        "foo", (_, _, b) ->
-            b.node("foo", s -> s + " And another one.", _ -> {})
-    );
-    XML.transform(new StringReader(input), writer, style);
-    assertSameDocument(expected, writer.toString());
-  }
-
-  @Test
   public void replaceANodeIgnoreAllTheOthers() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
