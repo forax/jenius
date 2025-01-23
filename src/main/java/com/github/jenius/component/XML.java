@@ -86,7 +86,8 @@ public class XML {
   }
 
   private sealed interface Action {
-    enum EnumAction implements Action { IGNORE, EMIT }
+    enum EnumAction implements Action { EMIT }
+    record Ignore(String name, Attributes attrs) implements Action {}
     record Replace(String newName) implements Action {}
     record Replay(Node document, Node node, UnaryOperator<Node> function) implements Action {}
   }
@@ -106,7 +107,7 @@ public class XML {
             calledOnce = true;
             var contentHandler = getContentHandler();
             contentHandler.startElement("", name, name, AttributesUtil.asAttributes(map));
-            actionsStack.pop();
+            actionsStack.pop();  // pop ignore
             actionsStack.push(new Action.Replace(name));
             children.accept(delegatingNodeBuilder());
             return this;
@@ -130,7 +131,7 @@ public class XML {
       public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
         switch (actionsStack.peek()) {
           case null -> {}  // no action yet
-          case Action.EnumAction _, Action.Replace _ -> {}
+          case Action.EnumAction _, Action.Ignore _, Action.Replace _ -> {}
           case Action.Replay(Node document, Node node, _) -> {
             var newNode = document.createNode(localName, AttributesUtil.asMap(attrs));
             node.appendChild(newNode);
@@ -141,7 +142,7 @@ public class XML {
         var componentOpt = style.lookup(localName);
         if (componentOpt.isPresent()) {
           var component = componentOpt.orElseThrow();
-          actionsStack.push(Action.EnumAction.IGNORE);
+          actionsStack.push(new Action.Ignore(localName, attrs));
           try {
             component.render(localName, AttributesUtil.asMap(attrs), rewritingNodeBuilder());
           } catch (UncheckedSAXException e) {
@@ -157,8 +158,8 @@ public class XML {
       public void endElement(String uri, String localName, String qName) throws SAXException {
         var action = actionsStack.pop();
         switch (action) {
-          case Action.EnumAction.IGNORE -> {}
           case Action.EnumAction.EMIT -> super.endElement(uri, localName, qName);
+          case Action.Ignore _ -> {}
           case Action.Replace(String newName) -> super.endElement("", newName, newName);
           case Action.Replay(_, Node node, UnaryOperator<Node> function) -> {
             if (function != null) {
@@ -173,8 +174,8 @@ public class XML {
       public void characters(char[] ch, int start, int length) throws SAXException {
         var action = Objects.requireNonNull(actionsStack.peek());
         switch (action) {
-          case Action.EnumAction.IGNORE -> {}
           case Action.EnumAction.EMIT -> super.characters(ch, start, length);
+          case Action.Ignore _ -> {}
           case Action.Replace _ -> super.characters(ch, start, length);
           case Action.Replay(_, Node node, _) -> node.appendText(new String(ch, start, length));
         }
