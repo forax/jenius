@@ -17,9 +17,9 @@ public class TalcGenerator {
     return node.getFirst().text();
   }
 
-  public record TdSummary(String title, List<String> exercises) {}
+  public record Summary(String title, List<String> exercises) {}
 
-  public static TdSummary extractTdSummary(Reader reader) throws IOException {
+  public static Summary extractSummary(Reader reader) throws IOException {
     var node = XML.transform(reader, ComponentStyle.of(Map.of(
         "td",  (_, _, b) -> b.node("td"),
         "title", (_, _, b) -> b.node("title"),
@@ -28,7 +28,7 @@ public class TalcGenerator {
                     .text(attrs.get("title")))
     )).ignoreAllOthers());
     var root = node.getFirst();
-    return new TdSummary(
+    return new Summary(
         root.text().strip(),
         root.children().stream().skip(1).map(Node::text).toList());
   }

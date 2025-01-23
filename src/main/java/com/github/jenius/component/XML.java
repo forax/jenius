@@ -21,9 +21,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Result;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
@@ -39,9 +37,11 @@ public class XML {
 
   private static abstract class SaxNodeAdapter implements NodeBuilder {
     private final XMLFilterImpl impl;
+    private final ArrayDeque<Action> actionStack;
 
-    private SaxNodeAdapter(XMLFilterImpl impl) {
+    private SaxNodeAdapter(XMLFilterImpl impl, ArrayDeque<Action> actionStack) {
       this.impl = impl;
+      this.actionStack = actionStack;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class XML {
       Objects.requireNonNull(map);
       Objects.requireNonNull(children);
       try {
-        return saxEvent(name, map, children);
+        return saxNode(name, map, children);
       } catch (SAXException e) {
         throw new UncheckedSAXException(e);
       }
@@ -69,28 +69,37 @@ public class XML {
     }
 
     @Override
+    public void replay(String name, Map<String, String> map, UnaryOperator<Node> function) {
+      var document = Node.createDocument();
+      var node = document.createNode(name, map);
+      actionStack.pop();
+      actionStack.push(new Action.Replay(document, node, function));
+    }
+
+    @Override
     public final NodeBuilder include(Reader reader) {
       XML.include(impl, reader);
       return this;
     }
 
-    abstract NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
+    abstract NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
   private sealed interface Action {
     enum EnumAction implements Action { IGNORE, EMIT }
     record Replace(String newName) implements Action {}
+    record Replay(Node document, Node node, UnaryOperator<Node> function) implements Action {}
   }
 
   private static XMLFilterImpl filter(XMLReader xmlReader, ComponentStyle style) {
     var actionsStack = new ArrayDeque<Action>();
     return new XMLFilterImpl(xmlReader) {
       private NodeBuilder rewritingNodeBuilder() {
-        return new SaxNodeAdapter(this) {
+        return new SaxNodeAdapter(this, actionsStack) {
           private boolean calledOnce;
 
           @Override
-          public NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
             if (calledOnce) {
               throw new IllegalStateException("this builder has already called once");
             }
@@ -106,9 +115,9 @@ public class XML {
       }
 
       private NodeBuilder delegatingNodeBuilder() {
-        return new SaxNodeAdapter(this) {
+        return new SaxNodeAdapter(this, actionsStack) {
           @Override
-          public NodeBuilder saxEvent(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
             startElement("", name, name, AttributesUtil.asAttributes(map));
             children.accept(this);
             endElement("", name, name);
@@ -119,6 +128,16 @@ public class XML {
 
       @Override
       public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
+        switch (actionsStack.peek()) {
+          case null -> {}  // no action yet
+          case Action.EnumAction _, Action.Replace _ -> {}
+          case Action.Replay(Node document, Node node, _) -> {
+            var newNode = document.createNode(localName, AttributesUtil.asMap(attrs));
+            node.appendChild(newNode);
+            actionsStack.push(new Action.Replay(document, newNode, null));
+            return;
+          }
+        }
         var componentOpt = style.lookup(localName);
         if (componentOpt.isPresent()) {
           var component = componentOpt.orElseThrow();
@@ -141,16 +160,23 @@ public class XML {
           case Action.EnumAction.IGNORE -> {}
           case Action.EnumAction.EMIT -> super.endElement(uri, localName, qName);
           case Action.Replace(String newName) -> super.endElement("", newName, newName);
+          case Action.Replay(_, Node node, UnaryOperator<Node> function) -> {
+            if (function != null) {
+              var newNode = function.apply(node);
+              newNode.visit(this);
+            }
+          }
         }
       }
 
       @Override
       public void characters(char[] ch, int start, int length) throws SAXException {
-        var action = actionsStack.peek();
+        var action = Objects.requireNonNull(actionsStack.peek());
         switch (action) {
           case Action.EnumAction.IGNORE -> {}
           case Action.EnumAction.EMIT -> super.characters(ch, start, length);
           case Action.Replace _ -> super.characters(ch, start, length);
+          case Action.Replay(_, Node node, _) -> node.appendText(new String(ch, start, length));
         }
       }
     };

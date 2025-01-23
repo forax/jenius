@@ -23,14 +23,14 @@ public class TalcGeneratorTest {
 
   @Test
   public void generateIdxForTd() throws IOException, URISyntaxException {
-    TalcGenerator.TdSummary tdSummary;
+    TalcGenerator.Summary summary;
     try(var input = TalcGenerator.class.getResourceAsStream("td01.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
-      tdSummary = TalcGenerator.extractTdSummary(reader);
+      summary = TalcGenerator.extractSummary(reader);
     }
-    System.out.println(tdSummary);
-    var expected = new TalcGenerator.TdSummary("Premiers pas en Java, chaînes de caractères, tableaux, boucles",
+    System.out.println(summary);
+    var expected = new TalcGenerator.Summary("Premiers pas en Java, chaînes de caractères, tableaux, boucles",
         List.of("Hello Groland", "Afficher les arguments de la ligne de commande", "Calculette simple", "Bien le bonjour", "De C vers Java"));
-    assertEquals(expected, tdSummary);
+    assertEquals(expected, summary);
   }
 }

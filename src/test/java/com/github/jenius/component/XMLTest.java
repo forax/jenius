@@ -272,4 +272,51 @@ public class XMLTest {
     XML.transform(new StringReader(input), writer, style);
     assertSameDocument(expected, writer.toString());
   }
+
+  @Test
+  public void replayIdentity() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar>
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <whizz>
+          <bar>
+            This is a text
+          </bar>
+        </whizz>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of("foo",
+        (_, attrs, b) -> b.replay("whizz", attrs, n -> n));
+    XML.transform(new StringReader(input), writer, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void replayIgnore() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar>
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <whizz>
+        </whizz>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of("foo",
+        (name, attrs, b) -> b.replay(name, attrs, n -> n.createNode("whizz")));
+    XML.transform(new StringReader(input), writer, style);
+    assertSameDocument(expected, writer.toString());
+  }
 }

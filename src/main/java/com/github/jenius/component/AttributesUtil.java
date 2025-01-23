@@ -1,5 +1,6 @@
 package com.github.jenius.component;
 
+import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -95,6 +96,20 @@ final class AttributesUtil {
     map.forEach((key, value) -> {
       attributes.addAttribute("", key, key, "CDATA", value);
     });
+    return attributes;
+  }
+
+  public static Attributes asAttributes(NamedNodeMap namedNodeMap) {
+    var attributes = new AttributesImpl();
+    if (namedNodeMap == null) {
+      return attributes;
+    }
+    for(var i = 0; i < attributes.getLength(); i++) {
+      var item = namedNodeMap.item(i);
+      var key = item.getNodeName();
+      var value = item.getNodeValue();
+      attributes.addAttribute("", key, key, "CDATA", value);
+    }
     return attributes;
   }
 }

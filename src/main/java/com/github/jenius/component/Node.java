@@ -1,11 +1,17 @@
 package com.github.jenius.component;
 
-import org.w3c.dom.Element;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -16,36 +22,53 @@ import java.util.Set;
 
 public final class Node {
   private final org.w3c.dom.Node domNode;
-  private String name;
-  private String text;
-  private Map<String, String> attributes;
-  private List<Node> children;
 
   Node(org.w3c.dom.Node domNode) {
     this.domNode = domNode;
   }
 
-  public Node(String name, Map<String, String> attributes) {
-    this(null);
-    this.name = Objects.requireNonNull(name);
-    this.text = "";
-    this.attributes = CompactMap.copyOf(attributes);
-    this.children = new ArrayList<>();
-  }
-
-  public void text(String text) {
-    if (domNode != null) {
-      throw new UnsupportedOperationException("unmodifiable node");
+  public static Node createDocument() {
+    var factory = DocumentBuilderFactory.newInstance();
+    DocumentBuilder builder;
+    try {
+      builder = factory.newDocumentBuilder();
+    } catch (ParserConfigurationException e) {
+      throw new UncheckedIOException(new IOException(e));
     }
-    this.text = text;
+    var document = builder.newDocument();
+    return new Node(document);
   }
 
-  public void add(Node node) {
+  private org.w3c.dom.Document getDomDocument() {
+    if (domNode instanceof org.w3c.dom.Document document) {
+      return document;
+    }
+    return domNode.getOwnerDocument();
+  }
+
+  public Node createNode(String name) {
+    return createNode(name, Map.of());
+  }
+
+  public Node createNode(String name, Map<String, String> attributes) {
+    Objects.requireNonNull(name);
+    Objects.requireNonNull(attributes);
+    var document = getDomDocument();
+    var element = document.createElement(name);
+    attributes.forEach(element::setAttribute);
+    return new Node(element);
+  }
+
+  public void appendChild(Node node) {
     Objects.requireNonNull(node);
-    if (domNode != null) {
-      throw new UnsupportedOperationException("unmodifiable node");
-    }
-    children.add(node);
+    domNode.appendChild(node.domNode);
+  }
+
+  public void appendText(String content) {
+    Objects.requireNonNull(content);
+    var document = getDomDocument();
+    var text = document.createTextNode(content);
+    domNode.appendChild(text);
   }
 
   public Node getFirst() {
@@ -57,8 +80,8 @@ public final class Node {
     builder.append(indent).append("Node: ")
         .append(domNode.getNodeName()).append(" [Type: ").append(domNode.getNodeType())
         .append(nodeValue != null ? ", Value: " + nodeValue : "").append("]\n");
-    if (domNode instanceof Element) {
-      var attributes = domNode.getAttributes();
+    var attributes = domNode.getAttributes();
+    if (attributes != null) {
       for (int i = 0; i < attributes.getLength(); i++) {
         var attribute = attributes.item(i);
         builder.append(indent).append("  Attribute: ")
@@ -67,45 +90,45 @@ public final class Node {
     }
     var children = domNode.getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
-      new Node(children.item(i)).toString(builder, indent + "  ");
+      toDOMString(children.item(i), builder, indent + "  ");
     }
-  }
-
-  private void toNodeString(StringBuilder builder, String indent) {
-    builder.append(indent).append("Node: ").append(name).append("]\n");
-    attributes.forEach((name, value) -> {
-      builder.append(indent).append("  Attribute: ").append(name).append(" = ").append(value).append('\n');
-    });
-    for (var node : children) {
-      node.toString(builder, indent + "  ");
-    }
-  }
-
-  private void toString(StringBuilder builder, String indent) {
-    if (domNode == null) {
-      toNodeString(builder, indent);
-    }
-    toDOMString(domNode, builder, indent);
   }
 
   @Override
   public String toString() {
     var builder = new StringBuilder();
-    toString(builder, "  ");
+    toDOMString(domNode, builder, "  ");
     return builder.toString();
   }
 
+  public String name() {
+    return domNode.getNodeName();
+  }
+
   public String text() {
-    if (text != null) {
-      return text;
-    }
     return domNode.getFirstChild().getTextContent();
   }
 
-  public Map<String, String> attributes() {
-    if (attributes != null) {
-      return attributes;
+  private static void visit(org.w3c.dom.Node domNode, ContentHandler handler) throws SAXException {
+    var name = domNode.getNodeName();
+    if (domNode.getNodeType() == org.w3c.dom.Node.TEXT_NODE) {
+      var text = domNode.getTextContent();
+      handler.characters(text.toCharArray(), 0, text.length());
+      return;
     }
+    handler.startElement(null, name, name, AttributesUtil.asAttributes(domNode.getAttributes()));
+    var domList = domNode.getChildNodes();
+    for(var i = 0; i < domList.getLength(); i++) {
+      visit(domList.item(i), handler);
+    }
+    handler.endElement("", name, name);
+  }
+
+  void visit(ContentHandler handler) throws SAXException {
+    visit(domNode, handler);
+  }
+
+  public Map<String, String> attributes() {
     var domMap = domNode.getAttributes();
     return new AbstractMap<>() {
       @Override
@@ -113,11 +136,14 @@ public final class Node {
         return new AbstractSet<>() {
           @Override
           public int size() {
-            return domMap.getLength();
+            return domMap == null ? 0 : domMap.getLength();
           }
 
           @Override
           public Iterator<Entry<String, String>> iterator() {
+            if (domMap == null) {
+              return Collections.emptyIterator();
+            }
             return new Iterator<>() {
               private int index;
 
@@ -151,6 +177,7 @@ public final class Node {
 
       @Override
       public String getOrDefault(Object key, String defaultValue) {
+        Objects.requireNonNull(key);
         if (!(key instanceof String name)) {
           return defaultValue;
         }
@@ -161,9 +188,6 @@ public final class Node {
   }
 
   public List<Node> children() {
-    if (children != null) {
-      return children;
-    }
     var domList = domNode.getChildNodes();
     class NodeList extends AbstractList<Node> implements RandomAccess {
       @Override
