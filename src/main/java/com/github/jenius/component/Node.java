@@ -50,12 +50,22 @@ public final class Node {
     return createNode(name, Map.of());
   }
 
+  public Node createNode(String name, List<Node> children) {
+    return createNode(name, Map.of(), children);
+  }
+
   public Node createNode(String name, Map<String, String> attributes) {
+    return createNode(name, attributes, List.of());
+  }
+
+  public Node createNode(String name, Map<String, String> attributes, List<Node> children) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(attributes);
+    Objects.requireNonNull(children);
     var document = getDomDocument();
     var element = document.createElement(name);
     attributes.forEach(element::setAttribute);
+    List.copyOf(children).forEach(n -> element.appendChild(n.domNode));
     return new Node(element);
   }
 

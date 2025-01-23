@@ -293,7 +293,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
-        (_, attrs, b) -> b.replay("whizz", attrs, n -> n));
+        (_, attrs, b) -> b.replay(n -> n.createNode("whizz", n.children())));
     XML.transform(new StringReader(input), writer, style);
     assertSameDocument(expected, writer.toString());
   }
@@ -315,7 +315,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
-        (name, attrs, b) -> b.replay(name, attrs, n -> n.createNode("whizz")));
+        (name, attrs, b) -> b.replay(n -> n.createNode("whizz")));
     XML.transform(new StringReader(input), writer, style);
     assertSameDocument(expected, writer.toString());
   }

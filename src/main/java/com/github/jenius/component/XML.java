@@ -69,10 +69,10 @@ public class XML {
     }
 
     @Override
-    public void replay(String name, Map<String, String> map, UnaryOperator<Node> function) {
+    public final void replay(UnaryOperator<Node> function) {
+      var ignore = (Action.Ignore) actionStack.pop();
       var document = Node.createDocument();
-      var node = document.createNode(name, map);
-      actionStack.pop();
+      var node = document.createNode(ignore.name, AttributesUtil.asMap(ignore.attrs));
       actionStack.push(new Action.Replay(document, node, function));
     }
 
@@ -107,7 +107,7 @@ public class XML {
             calledOnce = true;
             var contentHandler = getContentHandler();
             contentHandler.startElement("", name, name, AttributesUtil.asAttributes(map));
-            actionsStack.pop();  // pop ignore
+            var _ = (Action.Ignore) actionsStack.pop();
             actionsStack.push(new Action.Replace(name));
             children.accept(delegatingNodeBuilder());
             return this;

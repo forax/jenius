@@ -23,10 +23,23 @@ public class NodeTest {
     var node = document.createNode("div", Map.of("foo", "bar"));
     document.appendChild(node);
     assertAll(
-        () -> assertEquals(Map.of(), document.attributes()),
+        () -> assertEquals(Map.of("foo", "bar"), node.attributes()),
         () -> assertEquals(1, document.children().size()),
         () -> assertEquals("div", document.getFirst().name())
         );
+  }
+
+  @Test
+  public void createNodeWithChildren() {
+    var document = Node.createDocument();
+    var child = document.createNode("span");
+    var node = document.createNode("div", Map.of("foo", "bar"), List.of(child));
+    document.appendChild(node);
+    assertAll(
+        () -> assertEquals(Map.of("foo", "bar"), node.attributes()),
+        () -> assertEquals(1, node.children().size()),
+        () -> assertEquals("span", node.getFirst().name())
+    );
   }
 
   @Test

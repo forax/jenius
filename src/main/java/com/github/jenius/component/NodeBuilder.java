@@ -47,7 +47,7 @@ public interface NodeBuilder {
 
   NodeBuilder text(String text);
 
-  void replay(String name, Map<String, String> map, UnaryOperator<Node> function);
-
   NodeBuilder include(Reader reader);
+
+  void replay(UnaryOperator<Node> function);
 }
