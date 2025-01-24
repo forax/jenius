@@ -388,4 +388,31 @@ public class XMLTest {
     XML.transform(node2, writer, XML.OutputKind.XML, style);
     assertSameDocument(input, writer.toString());
   }
+
+  @Test
+  public void fragmentNode() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+         <bar>
+          This is a test
+         </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+         <box/>
+         <box/>
+        </foo>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "bar", (_, attrs, b) -> b.fragment(c -> {
+          c.node("box");
+          c.node("box");
+        }));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
 }

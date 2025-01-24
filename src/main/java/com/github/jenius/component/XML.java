@@ -90,12 +90,14 @@ public class XML {
 
     @Override
     public final NodeBuilder include(Reader reader) {
+      Objects.requireNonNull(reader);
       XML.include(impl, reader);
       return this;
     }
 
     @Override
     public final NodeBuilder include(Node node) {
+      Objects.requireNonNull(node);
       try {
         node.visit(impl);
       } catch (SAXException e) {
@@ -106,6 +108,7 @@ public class XML {
 
     @Override
     public final void replay(UnaryOperator<Node> function) {
+      Objects.requireNonNull(function);
       var ignore = (Action.Ignore) actionStack.pop();
       var document = Node.createDocument();
       var node = document.createNode(ignore.name, AttributesUtil.asMap(ignore.attrs));
@@ -113,8 +116,16 @@ public class XML {
     }
 
     @Override
-    public void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer) {
+    public final void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer) {
+      Objects.requireNonNull(consumer);
       replay(node -> { consumer.accept(node, delegatingNodeBuilder()); return null; });
+    }
+
+    @Override
+    public final NodeBuilder fragment(Consumer<? super NodeBuilder> children) {
+      Objects.requireNonNull(children);
+      children.accept(delegatingNodeBuilder());
+      return this;
     }
 
     abstract NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
