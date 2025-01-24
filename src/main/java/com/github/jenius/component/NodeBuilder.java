@@ -49,5 +49,7 @@ public interface NodeBuilder {
 
   NodeBuilder include(Reader reader);
 
+  NodeBuilder include(Node node);
+
   void replay(UnaryOperator<Node> function);
 }

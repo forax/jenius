@@ -88,6 +88,16 @@ public class XML {
       return this;
     }
 
+    @Override
+    public final NodeBuilder include(Node node) {
+      try {
+        node.visit(impl);
+      } catch (SAXException e) {
+        throw new UncheckedSAXException(e);
+      }
+      return this;
+    }
+
     abstract NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
