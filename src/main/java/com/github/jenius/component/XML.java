@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -51,6 +52,18 @@ public class XML {
       this.actionStack = actionStack;
     }
 
+    private NodeBuilder delegatingNodeBuilder() {
+      return new SaxNodeAdapter(impl, actionStack) {
+        @Override
+        public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          impl.startElement("", name, name, AttributesUtil.asAttributes(map));
+          children.accept(this);
+          impl.endElement("", name, name);
+          return this;
+        }
+      };
+    }
+
     @Override
     public final NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
       Objects.requireNonNull(name);
@@ -76,14 +89,6 @@ public class XML {
     }
 
     @Override
-    public final void replay(UnaryOperator<Node> function) {
-      var ignore = (Action.Ignore) actionStack.pop();
-      var document = Node.createDocument();
-      var node = document.createNode(ignore.name, AttributesUtil.asMap(ignore.attrs));
-      actionStack.push(new Action.Replay(document, node, function));
-    }
-
-    @Override
     public final NodeBuilder include(Reader reader) {
       XML.include(impl, reader);
       return this;
@@ -97,6 +102,19 @@ public class XML {
         throw new UncheckedSAXException(e);
       }
       return this;
+    }
+
+    @Override
+    public final void replay(UnaryOperator<Node> function) {
+      var ignore = (Action.Ignore) actionStack.pop();
+      var document = Node.createDocument();
+      var node = document.createNode(ignore.name, AttributesUtil.asMap(ignore.attrs));
+      actionStack.push(new Action.Replay(document, node, function));
+    }
+
+    @Override
+    public void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer) {
+      replay(node -> { consumer.accept(node, delegatingNodeBuilder()); return null; });
     }
 
     abstract NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
@@ -126,23 +144,13 @@ public class XML {
             contentHandler.startElement("", name, name, AttributesUtil.asAttributes(map));
             var _ = (Action.Ignore) actionsStack.pop();
             actionsStack.push(new Action.Replace(name));
-            children.accept(delegatingNodeBuilder());
+            children.accept(super.delegatingNodeBuilder());
             return this;
           }
         };
       }
 
-      private NodeBuilder delegatingNodeBuilder() {
-        return new SaxNodeAdapter(this, actionsStack) {
-          @Override
-          public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
-            startElement("", name, name, AttributesUtil.asAttributes(map));
-            children.accept(this);
-            endElement("", name, name);
-            return this;
-          }
-        };
-      }
+
 
       @Override
       public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
@@ -181,7 +189,9 @@ public class XML {
           case Action.Replay(_, Node node, UnaryOperator<Node> function) -> {
             if (function != null) {
               var newNode = function.apply(node);
-              newNode.visit(this);
+              if (newNode != null) {
+                newNode.visit(this);
+              }
             }
           }
         }
