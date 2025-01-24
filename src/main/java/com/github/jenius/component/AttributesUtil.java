@@ -104,7 +104,7 @@ final class AttributesUtil {
     if (namedNodeMap == null) {
       return attributes;
     }
-    for(var i = 0; i < attributes.getLength(); i++) {
+    for(var i = 0; i < namedNodeMap.getLength(); i++) {
       var item = namedNodeMap.item(i);
       var key = item.getNodeName();
       var value = item.getNodeValue();
