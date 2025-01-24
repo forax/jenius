@@ -84,14 +84,38 @@ public class XMLTest {
         </ol>
         """;
     var writer = new StringWriter();
-    var style = ComponentStyle.of(Map.of(
-        "list", (_, attrs, b) -> {
+    var style = ComponentStyle.of(
+        "list", Component.of((_, attrs, b) -> {
           var ordered = "ordered".equals(attrs.get("style"));
           b.node(ordered ? "ol" : "li");
-        },
-        "item", (_, _, b) -> b.node("li")
-    ));
+        }),
+        "item", Component.of((_, _, b) -> b.node("li"))
+    );
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void replaceSeveralNodesWithTheSameComponent() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo zorg="true">
+         <bar>
+         </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <whizz zorg="true">
+         <whizz>
+         </whizz>
+        </whizz>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "foo", "bar", Component.of((_, attrs, b) -> b.node("whizz", attrs))
+    );
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML,style);
     assertSameDocument(expected, writer.toString());
   }
 

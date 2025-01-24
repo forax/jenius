@@ -1,5 +1,6 @@
 package com.github.jenius.component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +18,38 @@ public interface ComponentStyle {
     Objects.requireNonNull(name);
     Objects.requireNonNull(component);
     return of(Map.of(name, component));
+  }
+
+  static ComponentStyle of(Object... nameOrComponents) {
+    Objects.requireNonNull(nameOrComponents);
+    var map = new HashMap<String, Component>();
+    var i = 0;
+    Object nameOrComponent;
+    for(;;) {
+      var names = new ArrayList<String>();
+      for(;;) {
+        if (i == nameOrComponents.length) {
+          if (!names.isEmpty()) {
+            throw new IllegalArgumentException("names " + names + " with no componenet");
+          }
+          return of(map);
+        }
+        nameOrComponent = Objects.requireNonNull(nameOrComponents[i]);
+        if (nameOrComponent instanceof String name) {
+          names.add(name);
+          i++;
+          continue;
+        }
+        break;
+      }
+      if (!(nameOrComponent instanceof Component component)) {
+        throw new IllegalArgumentException("invalid argument " + nameOrComponent);
+      }
+      for(var name : names) {
+        map.put(name,  component);
+      }
+      i++;
+    }
   }
 
   static ComponentStyle of(Map<? extends String, ? extends Component> componentMap) {
