@@ -5,22 +5,20 @@ import com.github.jenius.component.Node;
 import com.github.jenius.component.XML;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
-public class TalcGenerator {
-  public static String extractTitleFromIndex(Reader reader) throws IOException {
-    var node = XML.transform(reader, ComponentStyle.of(
+final class TalcGenerator {
+  public static Summary extractSummaryFromIndex(Node document) throws IOException {
+    var node = XML.transform(document, ComponentStyle.of(
         "title", (_, _, b) -> b.node("title")
     ).ignoreAllOthers());
-    return node.getFirstElement().text();
+    return new Summary(node.getFirstElement().text(), List.of());
   }
 
-  public record Summary(String title, List<String> exercises) {}
 
-  public static Summary extractSummary(Reader reader) throws IOException {
-    var node = XML.transform(reader, ComponentStyle.of(Map.of(
+  public static Summary extractSummaryFromFile(Node document) throws IOException {
+    var node = XML.transform(document, ComponentStyle.of(Map.of(
         "td",  (_, _, b) -> b.node("td"),
         "title", (_, _, b) -> b.node("title"),
         "exercise", (_, attrs, b) -> b

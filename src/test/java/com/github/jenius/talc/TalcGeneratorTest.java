@@ -32,23 +32,25 @@ public class TalcGeneratorTest {
   }
 
   @Test
-  public void generateTitleFromIndex() throws IOException {
-    String title;
+  public void generateIndexSummary() throws IOException {
+    Summary summary;
     try(var input = TalcGenerator.class.getResourceAsStream("index.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
-      title = TalcGenerator.extractTitleFromIndex(reader);
+      var document = XML.transform(reader);
+      summary = TalcGenerator.extractSummaryFromIndex(document);
     }
-    assertEquals("Programmation Objet avec Java", title);
+    assertEquals("Programmation Objet avec Java", summary.title());
   }
 
   @Test
-  public void generateSummaryFromFile() throws IOException {
-    TalcGenerator.Summary summary;
+  public void generateFileSummary() throws IOException {
+    Summary summary;
     try(var input = TalcGenerator.class.getResourceAsStream("td01.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
-      summary = TalcGenerator.extractSummary(reader);
+      var document = XML.transform(reader);
+      summary = TalcGenerator.extractSummaryFromFile(document);
     }
-    var expected = new TalcGenerator.Summary("Premiers pas en Java, chaînes de caractères, tableaux, boucles",
+    var expected = new Summary("Premiers pas en Java, chaînes de caractères, tableaux, boucles",
         List.of("Hello Groland", "Afficher les arguments de la ligne de commande", "Calculette simple", "Bien le bonjour", "De C vers Java"));
     assertEquals(expected, summary);
   }

@@ -147,9 +147,13 @@ public class XMLTest {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <section>
+          An ignored text.
           <paragraph>
             This is a test
           </paragraph>
+          <ignored-tag>
+            An another ignored text
+          </ignored-tag>
         </section>
         """;
     var expected = """
@@ -354,7 +358,21 @@ public class XMLTest {
   }
 
   @Test
-  public void transformNodeToNodeIdentity() throws IOException {
+  public void transformNodeIdentity() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar glut="true">
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var node = XML.transform(new StringReader(input));
+    assertSameDocument(input, node.toString());
+  }
+
+  @Test
+  public void transformNodeToNodeStyleIdentity() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <foo>
