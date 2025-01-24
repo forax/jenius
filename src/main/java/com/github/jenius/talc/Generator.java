@@ -70,8 +70,54 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
               "style", "height:" + height + ";width:" + width + ";align:" + align + ";"));
         }),
         Map.entry("code", (_, _, b) ->
-            b.node("pre", "class", "code", "width", "100%")))
-    );
+            b.node("pre", "class", "code", "width", "100%")),
+        Map.entry("infos", (_, _, b) ->
+            b.node("table", "style", "font-size:100%", "width", "100%")),
+        Map.entry("team", (_, _, b) ->
+            b.collect((team, b2) -> {
+              var leaders = team.elements().stream().filter(n -> n.name().equals("leader")).toList();
+              var members = team.elements().stream().filter(n -> n.name().equals("member")).toList();
+              System.err.println("leaders " + leaders);
+              System.err.println("members " + members);
+              b2.node("tr", c -> {
+                c.node("td", "align", "left", "valign", "top", c2 -> {
+                   c2.node("h3", "style","font-size:90%", c3 -> c3.text("Responsables"));
+                   leaders.forEach(c2::include);
+                });
+                c.node("td", "align", "right", "valign", "top", c2 -> {
+                   c2.node("h3", "style","font-size:90%", c3 -> c3.text("Chargés de TD"));
+                   members.forEach(c2::include);
+                });
+              });
+            })
+        ),
+        Map.entry("leader", (_, attrs, b) ->
+            b.node("div", "class", "leader", c -> {
+              c.text(attrs.getOrDefault("name", "???") + " -- ");
+              var www = attrs.get("www");
+              var mail = attrs.get("mail");
+              if (www != null) {
+                c.node("a", "href", www, c2 -> c2.text("www"));
+              }
+              c.text(" -- ");
+              if (mail != null) {
+                c.node("a", "href", mail, c2 -> c2.text("@"));
+              }
+            })),
+        Map.entry("member", (_, attrs, b) ->
+            b.node("div", "class", "member", c -> {
+              c.text(attrs.getOrDefault("name", "???") + " -- ");
+              var www = attrs.get("www");
+              var mail = attrs.get("mail");
+              if (www != null) {
+                c.node("a", "href", www, c2 -> c2.text("www"));
+              }
+              c.text(" -- ");
+              if (mail != null) {
+                c.node("a", "href", mail, c2 -> c2.text("@"));
+              }
+            }))
+    ));
   }
 
   private Summary readFileSummary(Path filePath) {
@@ -113,8 +159,8 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
           var filePath = dirPath.resolve(name);
           var fileSummary = readFileSummary(filePath);
           b.node("li", c -> {
-            c.node("a", "href", mapping.apply(name));
-            c.text(fileSummary.title());
+            c.node("a", "href", mapping.apply(name), c2 ->
+                c2.text(fileSummary.title()));
             c.node("br");
             c.text(fileSummary.exercises().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
           });
