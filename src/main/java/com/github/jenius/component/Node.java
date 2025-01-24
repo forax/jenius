@@ -121,7 +121,7 @@ public final class Node {
   public String toString() {
     var writer = new StringWriter();
     try {
-      XML.transform(this, writer, ComponentStyle.alwaysMatch(Component.identity()));
+      XML.transform(this, writer, XML.OutputKind.XML,ComponentStyle.alwaysMatch(Component.identity()));
     } catch(IOException e) {
       throw new UncheckedIOException(e);
     }

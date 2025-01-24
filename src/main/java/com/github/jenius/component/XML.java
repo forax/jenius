@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -301,10 +302,19 @@ public class XML {
     };
   }
 
-  private static void transform(XMLReader xmlReader, InputSource inputSource, Result result, ComponentStyle style) throws IOException {
+  public enum OutputKind {
+    HTML, XML;
+
+    private String methodName() {
+      return name().toLowerCase(Locale.ROOT);
+    }
+  }
+
+  private static void transform(XMLReader xmlReader, InputSource inputSource, Result result, OutputKind outputKind, ComponentStyle style) throws IOException {
     var transformerFactory = SAXTransformerFactory.newInstance();
     try {
       var transformer = transformerFactory.newTransformer();
+      transformer.setOutputProperty(javax.xml.transform.OutputKeys.METHOD, outputKind.methodName());
       var source = new SAXSource(filter(xmlReader, style), inputSource);
       transformer.transform(source, result);
     } catch (TransformerException e) {
@@ -319,17 +329,18 @@ public class XML {
     Objects.requireNonNull(style);
     var xmlReader = createXMLReader();
     var result = new DOMResult();
-    transform(xmlReader, new InputSource(reader), result, style);
+    transform(xmlReader, new InputSource(reader), result, OutputKind.XML, style);
     return new Node(result.getNode());
   }
 
-  public static void transform(Reader reader, Writer writer, ComponentStyle style) throws IOException {
+  public static void transform(Reader reader, Writer writer, OutputKind outputKind, ComponentStyle style) throws IOException {
     Objects.requireNonNull(reader);
-    Objects.requireNonNull(style);
     Objects.requireNonNull(writer);
+    Objects.requireNonNull(outputKind);
+    Objects.requireNonNull(style);
     var xmlReader = createXMLReader();
     var result = new StreamResult(writer);
-    transform(xmlReader, new InputSource(reader), result, style);
+    transform(xmlReader, new InputSource(reader), result, outputKind, style);
   }
 
   public static Node transform(Node node, ComponentStyle style) throws IOException {
@@ -337,16 +348,17 @@ public class XML {
     Objects.requireNonNull(style);
     var xmlReader = createXMLReader(node);
     var result = new DOMResult();
-    transform(xmlReader, null, result, style);
+    transform(xmlReader, null, result, OutputKind.XML, style);
     return new Node(result.getNode());
   }
 
-  public static void transform(Node node, Writer writer, ComponentStyle style) throws IOException {
+  public static void transform(Node node, Writer writer, OutputKind outputKind, ComponentStyle style) throws IOException {
     Objects.requireNonNull(node);
-    Objects.requireNonNull(style);
     Objects.requireNonNull(writer);
+    Objects.requireNonNull(outputKind);
+    Objects.requireNonNull(style);
     var xmlReader = createXMLReader(node);
     var result = new StreamResult(writer);
-    transform(xmlReader, null, result, style);
+    transform(xmlReader, null, result, outputKind, style);
   }
 }

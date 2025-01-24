@@ -1,11 +1,15 @@
 package com.github.jenius.talc;
 
+import com.github.jenius.component.Component;
+import com.github.jenius.component.ComponentStyle;
+import com.github.jenius.component.XML;
 import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.Test;
 import org.xmlunit.builder.DiffBuilder;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,10 +55,12 @@ public class TalcGeneratorTest {
 
   @Test
   public void validateTemplate() throws IOException, URISyntaxException {
-    //var input = Files.readString(Path.of(TalcGenerator.class.getResource("template.xml").toURI()));
+    var input = Files.readString(Path.of(TalcGenerator.class.getResource("template.html").toURI()));
     //assertSameDocument(input, input);
-    //var node = XML.transform(new StringReader(input), ComponentStyle.alwaysMatch(Component.identity()));
+    var style = ComponentStyle.alwaysMatch(Component.identity());
+    var node = XML.transform(new StringReader(input), style);
+    //System.out.println(node);
 
-    //assertSameDocument(input, node.toString());
+    //assertSameDocument(input, node.toString());  // FIXME
   }
 }

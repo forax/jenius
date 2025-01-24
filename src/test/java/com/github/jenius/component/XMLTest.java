@@ -40,7 +40,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of(
         "paragraph", (_, attrs, b) -> b.node("p", attrs));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -65,7 +65,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of(
         "section", (_, attrs, b) -> b.node("div", attrs));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -91,7 +91,7 @@ public class XMLTest {
         },
         "item", (_, _, b) -> b.node("li")
     ));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -115,7 +115,7 @@ public class XMLTest {
               .text("This is a test");
         }
     );
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -138,7 +138,7 @@ public class XMLTest {
     var style = ComponentStyle.of(
         "bar", (_, _, b) -> b.text("This is a test")
     );
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML,style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -162,7 +162,7 @@ public class XMLTest {
     var style = ComponentStyle.of(
         "paragraph", (_, attrs, b) -> b.node("foo", attrs))
         .ignoreAllOthers();
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -187,7 +187,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of(
         "bar", (name, attributes, nodeBuilder) -> {});
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -215,7 +215,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of(
         "bar", (name, attributes, nodeBuilder) -> {});
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -236,7 +236,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.alwaysMatch(
         (name, _, b) -> b.node(name, "draft", "true"));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -269,7 +269,7 @@ public class XMLTest {
     var style = ComponentStyle.of("include",
         (_, attrs, b) -> b.node("bar", attrs,
               children -> children.include(new StringReader(input2))));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -294,7 +294,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
         (_, attrs, b) -> b.replay(n -> n.createNode("whizz", n.childNodes())));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -316,7 +316,7 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
         (name, attrs, b) -> b.replay(n -> n.createNode("whizz")));
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
@@ -332,7 +332,7 @@ public class XMLTest {
         """;
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var writer = new StringWriter();
-    XML.transform(new StringReader(input), writer, style);
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(input, writer.toString());
   }
 
@@ -349,7 +349,7 @@ public class XMLTest {
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var node = XML.transform(new StringReader(input), style);
     var writer = new StringWriter();
-    XML.transform(node, writer, style);
+    XML.transform(node, writer, XML.OutputKind.XML, style);
     assertSameDocument(input, writer.toString());
   }
 
@@ -367,7 +367,7 @@ public class XMLTest {
     var node = XML.transform(new StringReader(input), style);
     var node2 = XML.transform(node, style);
     var writer = new StringWriter();
-    XML.transform(node2, writer, style);
+    XML.transform(node2, writer, XML.OutputKind.XML, style);
     assertSameDocument(input, writer.toString());
   }
 }
