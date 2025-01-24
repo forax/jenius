@@ -25,6 +25,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMResult;
@@ -118,7 +119,7 @@ public class XML {
           @Override
           public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
             if (calledOnce) {
-              throw new IllegalStateException("this builder has already called once");
+              throw new IllegalStateException("this builder has already called once " + name + " " + map);
             }
             calledOnce = true;
             var contentHandler = getContentHandler();
@@ -195,6 +196,11 @@ public class XML {
           case Action.Replace _ -> super.characters(ch, start, length);
           case Action.Replay(_, Node node, _) -> node.appendText(new String(ch, start, length));
         }
+      }
+
+      @Override
+      public void ignorableWhitespace(char[] ch, int start, int length) {
+        // just ignore them
       }
     };
   }
@@ -324,7 +330,10 @@ public class XML {
     var transformerFactory = SAXTransformerFactory.newInstance();
     try {
       var transformer = transformerFactory.newTransformer();
-      transformer.setOutputProperty(javax.xml.transform.OutputKeys.METHOD, outputKind.methodName());
+      transformer.setOutputProperty(OutputKeys.METHOD, outputKind.methodName());
+      if (outputKind == OutputKind.HTML) {
+        transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "");
+      }
       var source = new SAXSource(xmlReader, inputSource);
       transformer.transform(source, result);
     } catch (TransformerException e) {
