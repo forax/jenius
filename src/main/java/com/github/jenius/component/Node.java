@@ -233,19 +233,40 @@ public final class Node {
   }
 
   public List<Node> childNodes() {
-    var domList = domNode.getChildNodes();
+    var nodeList = domNode.getChildNodes();
     class NodeList extends AbstractList<Node> implements RandomAccess {
       @Override
       public int size() {
-        return domList.getLength();
+        return nodeList.getLength();
       }
 
       @Override
       public Node get(int index) {
         Objects.checkIndex(index, size());
-        return new Node(domList.item(index));
+        return new Node(nodeList.item(index));
       }
     }
     return new NodeList();
+  }
+
+  private static org.w3c.dom.Node element(org.w3c.dom.Node domNode, String name) {
+    Objects.requireNonNull(name);
+    var nodeList = domNode.getChildNodes();
+    for(var i = 0; i < nodeList.getLength(); i++) {
+      var item = nodeList.item(i);
+      if (name.equals(item.getNodeName())) {
+        return item;
+      }
+    }
+    throw new IllegalStateException("no element named " + name + " found");
+  }
+
+  public Node path(String... names) {
+    Objects.requireNonNull(names);
+    var domNode = this.domNode;
+    for(var name : names) {
+      domNode = element(domNode, name);
+    }
+    return new Node(domNode);
   }
 }

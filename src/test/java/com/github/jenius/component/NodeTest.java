@@ -68,14 +68,31 @@ public class NodeTest {
         </foo>
         """;
     var style = ComponentStyle.alwaysMatch(Component.identity());
-    var node = XML.transform(new StringReader(input), style);
-    System.err.println(node.toDebugString());
-    var root = node.getFirstElement();
+    var document = XML.transform(new StringReader(input), style);
+    System.err.println(document.toDebugString());
+    var root = document.getFirstElement();
     assertAll(
         () -> assertEquals("foo", root.name()),
         () -> assertEquals("bar", root.getFirstElement().name()),
         () -> assertEquals(Map.of("glut", "true"), root.getFirstElement().attributes()),
         () -> assertEquals("This is a text", root.getFirstElement().text().strip())
+    );
+  }
+
+  @Test
+  public void nodePath() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar glut="true">
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var document = XML.transform(new StringReader(input));
+    assertAll(
+        () -> assertEquals("foo", document.path("foo").name()),
+        () -> assertEquals("bar", document.path("foo", "bar").name())
     );
   }
 }
