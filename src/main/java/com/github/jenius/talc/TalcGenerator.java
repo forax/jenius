@@ -14,7 +14,7 @@ public class TalcGenerator {
     var node = XML.transform(reader, ComponentStyle.of(
         "title", (_, _, b) -> b.node("title")
     ).ignoreAllOthers());
-    return node.getFirst().text();
+    return node.getFirstElement().text();
   }
 
   public record Summary(String title, List<String> exercises) {}
@@ -27,9 +27,9 @@ public class TalcGenerator {
                 .node("exercise", children -> children
                     .text(attrs.get("title")))
     )).ignoreAllOthers());
-    var root = node.getFirst();
+    var root = node.getFirstElement();
     return new Summary(
         root.text().strip(),
-        root.children().stream().skip(1).map(Node::text).toList());
+        root.childNodes().stream().skip(1).map(Node::text).toList());
   }
 }

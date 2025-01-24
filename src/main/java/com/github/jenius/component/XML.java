@@ -11,8 +11,13 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLFilterImpl;
@@ -213,19 +218,6 @@ public class XML {
     }
   }
 
-  private static void transform(XMLReader xmlReader, InputSource inputSource, Result result, ComponentStyle style) throws IOException {
-    var transformerFactory = SAXTransformerFactory.newInstance();
-    try {
-      var transformer = transformerFactory.newTransformer();
-      var source = new SAXSource(filter(xmlReader, style), inputSource);
-      transformer.transform(source, result);
-    } catch (TransformerException e) {
-      throw new IOException(e);
-    } catch (UncheckedIOException e) {
-      throw e.getCause();
-    }
-  }
-
   private static XMLReader createXMLReader() throws IOException {
     var parserFactory = SAXParserFactory.newInstance();
     parserFactory.setNamespaceAware(true);
@@ -236,6 +228,89 @@ public class XML {
       throw new IllegalStateException(e);
     } catch (SAXException e) {
       throw new IOException(e);
+    }
+  }
+
+  private static XMLReader createXMLReader(Node node) {
+    return new XMLReader() {
+      private ContentHandler contentHandler;
+      private EntityResolver entityResolver;
+      private DTDHandler dtdHandler;
+      private ErrorHandler errorHandler;
+
+      @Override
+      public void setContentHandler(ContentHandler handler) {
+        this.contentHandler = handler;
+      }
+      @Override
+      public ContentHandler getContentHandler() {
+        return contentHandler;
+      }
+      @Override
+      public void setEntityResolver(EntityResolver resolver) {
+        this.entityResolver = resolver;
+      }
+      @Override
+      public EntityResolver getEntityResolver() {
+        return entityResolver;
+      }
+      @Override
+      public void setDTDHandler(DTDHandler handler) {
+        this.dtdHandler = handler;
+      }
+      @Override
+      public DTDHandler getDTDHandler() {
+        return dtdHandler;
+      }
+      @Override
+      public void setErrorHandler(ErrorHandler handler) {
+        this.errorHandler = handler;
+      }
+      @Override
+      public ErrorHandler getErrorHandler() {
+        return errorHandler;
+      }
+
+      @Override
+      public void parse(InputSource input) throws SAXException {
+        contentHandler.declaration(null, null, null);
+        node.visit(contentHandler);
+      }
+
+      @Override
+      public void parse(String systemId) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override
+      public boolean getFeature(String name) {
+        return false;
+      }
+      @Override
+      public void setFeature(String name, boolean value) throws SAXNotRecognizedException {
+         throw new SAXNotRecognizedException();
+      }
+      @Override
+      public Object getProperty(String name) {
+        return null;
+      }
+      @Override
+      public void setProperty(String name, Object value) throws SAXNotRecognizedException {
+        throw new SAXNotRecognizedException();
+      }
+    };
+  }
+
+  private static void transform(XMLReader xmlReader, InputSource inputSource, Result result, ComponentStyle style) throws IOException {
+    var transformerFactory = SAXTransformerFactory.newInstance();
+    try {
+      var transformer = transformerFactory.newTransformer();
+      var source = new SAXSource(filter(xmlReader, style), inputSource);
+      transformer.transform(source, result);
+    } catch (TransformerException e) {
+      throw new IOException(e);
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
     }
   }
 
@@ -255,5 +330,23 @@ public class XML {
     var xmlReader = createXMLReader();
     var result = new StreamResult(writer);
     transform(xmlReader, new InputSource(reader), result, style);
+  }
+
+  public static Node transform(Node node, ComponentStyle style) throws IOException {
+    Objects.requireNonNull(node);
+    Objects.requireNonNull(style);
+    var xmlReader = createXMLReader(node);
+    var result = new DOMResult();
+    transform(xmlReader, null, result, style);
+    return new Node(result.getNode());
+  }
+
+  public static void transform(Node node, Writer writer, ComponentStyle style) throws IOException {
+    Objects.requireNonNull(node);
+    Objects.requireNonNull(style);
+    Objects.requireNonNull(writer);
+    var xmlReader = createXMLReader(node);
+    var result = new StreamResult(writer);
+    transform(xmlReader, null, result, style);
   }
 }

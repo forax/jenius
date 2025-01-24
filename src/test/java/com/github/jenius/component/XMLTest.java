@@ -27,13 +27,13 @@ public class XMLTest {
   public void replaceNode() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
-        <paragraph>
+        <paragraph foo="bar">
           This is a test
         </paragraph>
         """;
     var expected = """
         <?xml version="1.0" encoding="UTF-8"?>
-        <p>
+        <p foo="bar">
           This is a test
         </p>
         """;
@@ -293,7 +293,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
-        (_, attrs, b) -> b.replay(n -> n.createNode("whizz", n.children())));
+        (_, attrs, b) -> b.replay(n -> n.createNode("whizz", n.childNodes())));
     XML.transform(new StringReader(input), writer, style);
     assertSameDocument(expected, writer.toString());
   }
@@ -318,5 +318,56 @@ public class XMLTest {
         (name, attrs, b) -> b.replay(n -> n.createNode("whizz")));
     XML.transform(new StringReader(input), writer, style);
     assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void transformReaderWriterIdentity() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar glut="true">
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var style = ComponentStyle.alwaysMatch(Component.identity());
+    var writer = new StringWriter();
+    XML.transform(new StringReader(input), writer, style);
+    assertSameDocument(input, writer.toString());
+  }
+
+  @Test
+  public void transformToNodeIdentity() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar glut="true">
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var style = ComponentStyle.alwaysMatch(Component.identity());
+    var node = XML.transform(new StringReader(input), style);
+    var writer = new StringWriter();
+    XML.transform(node, writer, style);
+    assertSameDocument(input, writer.toString());
+  }
+
+  @Test
+  public void transformNodeToNodeIdentity() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <bar glut="true">
+            This is a text
+          </bar>
+        </foo>
+        """;
+    var style = ComponentStyle.alwaysMatch(Component.identity());
+    var node = XML.transform(new StringReader(input), style);
+    var node2 = XML.transform(node, style);
+    var writer = new StringWriter();
+    XML.transform(node2, writer, style);
+    assertSameDocument(input, writer.toString());
   }
 }

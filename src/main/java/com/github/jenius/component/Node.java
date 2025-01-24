@@ -7,6 +7,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.AbstractList;
 import java.util.AbstractMap;
@@ -19,6 +20,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 public final class Node {
   private final org.w3c.dom.Node domNode;
@@ -50,22 +52,22 @@ public final class Node {
     return createNode(name, Map.of());
   }
 
-  public Node createNode(String name, List<Node> children) {
-    return createNode(name, Map.of(), children);
+  public Node createNode(String name, List<Node> childNodes) {
+    return createNode(name, Map.of(), childNodes);
   }
 
   public Node createNode(String name, Map<String, String> attributes) {
     return createNode(name, attributes, List.of());
   }
 
-  public Node createNode(String name, Map<String, String> attributes, List<Node> children) {
+  public Node createNode(String name, Map<String, String> attributes, List<Node> childNodes) {
     Objects.requireNonNull(name);
     Objects.requireNonNull(attributes);
-    Objects.requireNonNull(children);
+    Objects.requireNonNull(childNodes);
     var document = getDomDocument();
     var element = document.createElement(name);
     attributes.forEach(element::setAttribute);
-    List.copyOf(children).forEach(n -> element.appendChild(n.domNode));
+    List.copyOf(childNodes).forEach(n -> element.appendChild(n.domNode));
     return new Node(element);
   }
 
@@ -81,11 +83,16 @@ public final class Node {
     domNode.appendChild(text);
   }
 
-  public Node getFirst() {
-    return children().getFirst();
+  public Node getFirstElement() {
+    var nodeList = domNode.getChildNodes();
+    return IntStream.range(0, nodeList.getLength())
+        .mapToObj(nodeList::item)
+        .filter(domNode -> domNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE)
+        .map(Node::new)
+        .findFirst().orElseThrow();
   }
 
-  private static void toDOMString(org.w3c.dom.Node domNode, StringBuilder builder, String indent) {
+  private static void toDebugString(org.w3c.dom.Node domNode, StringBuilder builder, String indent) {
     var nodeValue = domNode.getNodeValue();
     builder.append(indent).append("Node: ")
         .append(domNode.getNodeName()).append(" [Type: ").append(domNode.getNodeType())
@@ -100,15 +107,25 @@ public final class Node {
     }
     var children = domNode.getChildNodes();
     for (int i = 0; i < children.getLength(); i++) {
-      toDOMString(children.item(i), builder, indent + "  ");
+      toDebugString(children.item(i), builder, indent + "  ");
     }
+  }
+
+  public String toDebugString() {
+    var builder = new StringBuilder();
+    toDebugString(domNode, builder, "  ");
+    return builder.toString();
   }
 
   @Override
   public String toString() {
-    var builder = new StringBuilder();
-    toDOMString(domNode, builder, "  ");
-    return builder.toString();
+    var writer = new StringWriter();
+    try {
+      XML.transform(this, writer, ComponentStyle.alwaysMatch(Component.identity()));
+    } catch(IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return writer.toString();
   }
 
   public String name() {
@@ -120,18 +137,27 @@ public final class Node {
   }
 
   private static void visit(org.w3c.dom.Node domNode, ContentHandler handler) throws SAXException {
-    var name = domNode.getNodeName();
-    if (domNode.getNodeType() == org.w3c.dom.Node.TEXT_NODE) {
+    var nodeType = domNode.getNodeType();
+    if (nodeType == org.w3c.dom.Node.TEXT_NODE) {
       var text = domNode.getTextContent();
       handler.characters(text.toCharArray(), 0, text.length());
       return;
     }
-    handler.startElement(null, name, name, AttributesUtil.asAttributes(domNode.getAttributes()));
+    var name = domNode.getNodeName();
+    if (nodeType == org.w3c.dom.Node.DOCUMENT_NODE) {
+      handler.startDocument();
+    } else {
+      handler.startElement("", name, name, AttributesUtil.asAttributes(domNode.getAttributes()));
+    }
     var domList = domNode.getChildNodes();
     for(var i = 0; i < domList.getLength(); i++) {
       visit(domList.item(i), handler);
     }
-    handler.endElement("", name, name);
+    if (nodeType == org.w3c.dom.Node.DOCUMENT_NODE) {
+      handler.endDocument();
+    } else {
+      handler.endElement("", name, name);
+    }
   }
 
   void visit(ContentHandler handler) throws SAXException {
@@ -197,7 +223,16 @@ public final class Node {
     };
   }
 
-  public List<Node> children() {
+  public List<Node> elements() {
+    var nodeList = domNode.getChildNodes();
+    return IntStream.range(0, nodeList.getLength())
+        .mapToObj(nodeList::item)
+        .filter(domNode -> domNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE)
+        .map(Node::new)
+        .toList();
+  }
+
+  public List<Node> childNodes() {
     var domList = domNode.getChildNodes();
     class NodeList extends AbstractList<Node> implements RandomAccess {
       @Override
