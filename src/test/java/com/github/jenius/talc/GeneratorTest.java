@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,23 +15,48 @@ public class GeneratorTest {
     return Path.of(GeneratorTest.class.getResource(filename).toURI());
   }
 
-
+  private static UnaryOperator<String> mapping() {
+    return name -> {
+      var index = name.lastIndexOf('.');
+      if (index == -1) {
+        return name;
+      }
+      var extension = name.substring(index + 1);
+      var newExtension = switch (extension) {
+        case "xumlv" -> "html";
+        default -> extension;
+      };
+      return name.substring(0, index) + "." + newExtension;
+    };
+  }
 
   @Test
-  public void test() throws URISyntaxException, IOException {
+  public void generateFile() throws URISyntaxException, IOException {
     var stylesheetPath = path("template.html");
+    var root = path(".");
     var file = path("td01.xumlv");
-    var output = path(".").resolve("target", "td01.html");
+    var output = root.resolve("target", mapping().apply("td01.xumlv"));
     Files.createDirectories(output.getParent());
 
     var stylesheet = DocumentManager.readPathAsDocument(stylesheetPath);
+    var manager = new DocumentManager();
 
-    var documentManager = new DocumentManager();
-    var document = documentManager.getDocument(FileKind.FILE, file);
-    var summary = documentManager.getSummary(FileKind.FILE, file);
+    var generator = new Generator(root, manager, mapping(), stylesheet);
+    generator.generate(FileKind.FILE, file, output);
+  }
 
-    try(var writer = Files.newBufferedWriter(output)) {
-      Generator.generate(document, writer, stylesheet, summary);
-    }
+  @Test
+  public void generateIndex() throws URISyntaxException, IOException {
+    var stylesheetPath = path("template.html");
+    var root = path(".");
+    var file = path("index.xumlv");
+    var output = root.resolve("target", mapping().apply("index.xumlv"));
+    Files.createDirectories(output.getParent());
+
+    var stylesheet = DocumentManager.readPathAsDocument(stylesheetPath);
+    var manager = new DocumentManager();
+
+    var generator = new Generator(root, manager, mapping(), stylesheet);
+    generator.generate(FileKind.INDEX, file, output);
   }
 }

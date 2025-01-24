@@ -6,10 +6,23 @@ import com.github.jenius.component.Node;
 import com.github.jenius.component.XML;
 
 import java.io.IOException;
-import java.io.Writer;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
-public class Generator {
+public record Generator(Path root, DocumentManager manager, UnaryOperator<String> mapping, Node stylesheet) {
+  public Generator {
+    Objects.requireNonNull(root);
+    Objects.requireNonNull(manager);
+    Objects.requireNonNull(mapping);
+    Objects.requireNonNull(stylesheet);
+  }
+
   private static ComponentStyle textDecoration() {
     return ComponentStyle.rename(
         "css-link", "link",
@@ -56,31 +69,73 @@ public class Generator {
               "height", height,
               "style", "height:" + height + ";width:" + width + ";align:" + align + ";"));
         }),
-        //<img src="{@src}" width="{@width}" style="height:{@height};width:{@width};align:{@align}"/>
         Map.entry("code", (_, _, b) ->
             b.node("pre", "class", "code", "width", "100%")))
     );
   }
 
-  private static ComponentStyle file(Node document) {
+  private Summary readFileSummary(Path filePath) {
+    try {
+      return manager.getSummary(FileKind.FILE, filePath);
+    } catch (IOException e) {  // create a fake summary
+      return new Summary(Utils.removeExtension(filePath.getFileName().toString()), List.of());
+    }
+  }
+
+  private ComponentStyle file(FileKind kind, Path dirPath) throws IOException {
+    var document = manager.getDocument(kind, dirPath);
+    var summary = manager.getSummary(kind, dirPath);
+    var breadcrumb = new BreadCrumb(List.of("IR1", "2024-2025"), List.of("../index.html", "../../index.html"));
     return ComponentStyle.of(Map.of(
-        //"td",  (_, _, b) -> b.include(stylesheet.getFirstElement()),
         "insert-content", (_, _, b) -> {
           for(var node : document.getFirstElement().childNodes()) {
             b.include(node);
           }
         },
-        "title", Component.discard()
+        "title", Component.discard(),
+        "insert-title", (_, _, b) -> b.node("title").text(summary.title()),
+        "insert-title-text", (_, _, b) -> b.text(summary.title()),
+        "insert-breadcrumb", (_, _, b) -> {
+            var div = b.node("span", "class", "bread-crumb", c -> {
+              var titles = breadcrumb.titles();
+              var hrefs = breadcrumb.hrefs();
+              for(var i = 0; i < titles.size(); i++) {
+                if (i != 0) {
+                  c.text(" :: ");
+                }
+                c.node("a", "href", hrefs.get(i))
+                    .text(titles.get(i));
+              }
+            });
+          },
+        "tdref", (_, attrs, b) -> {
+          var name = attrs.getOrDefault("name", "");
+          var filePath = dirPath.resolve(name);
+          var fileSummary = readFileSummary(filePath);
+          b.node("li", c -> {
+            c.node("a", "href", mapping.apply(name));
+            c.text(fileSummary.title());
+            c.node("br");
+            c.text(fileSummary.exercises().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
+          });
+        }
     ));
   }
 
-  public static void generate(Node document, Writer writer, Node stylesheet, Summary summary) throws IOException {
-    ComponentStyle style = ComponentStyle.anyMatch(
+  public void generate(FileKind kind, Path dirPath, Path destPath) throws IOException {
+    Objects.requireNonNull(kind);
+    Objects.requireNonNull(dirPath);
+    Objects.requireNonNull(destPath);
+    var style = ComponentStyle.anyMatch(
         noAnswer(),
-        file(document),
+        file(kind, dirPath),
         defaultStyle(),
         textDecoration()
     );
-    XML.transform(stylesheet, writer, XML.OutputKind.HTML, style);
+    try(var writer = Files.newBufferedWriter(destPath)) {
+      XML.transform(stylesheet, writer, XML.OutputKind.HTML, style);
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
+    }
   }
 }
