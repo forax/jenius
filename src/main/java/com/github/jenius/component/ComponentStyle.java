@@ -1,6 +1,6 @@
 package com.github.jenius.component;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -10,7 +10,7 @@ public interface ComponentStyle {
   Optional<Component> lookup(String name);
 
   default ComponentStyle ignoreAllOthers() {
-    return anyMatch(this, _ -> Optional.of(Component.ignore()));
+    return anyMatch(this, _ -> Optional.of(Component.discard()));
   }
 
   static ComponentStyle of(String name, Component component) {
@@ -22,6 +22,19 @@ public interface ComponentStyle {
   static ComponentStyle of(Map<? extends String, ? extends Component> componentMap) {
     Objects.requireNonNull(componentMap);
     return name -> Optional.ofNullable(componentMap.get(name));
+  }
+
+  static ComponentStyle rename(String... pairs) {
+    Objects.requireNonNull(pairs);
+    if (pairs.length % 2 != 0) {
+      throw new IllegalArgumentException("not an array of pairs");
+    }
+    var map = new HashMap<String, String>();
+    for(var i = 0; i < pairs.length; i += 2) {
+      map.put(pairs[i], pairs[i + 1]);
+    }
+    return name -> Optional.ofNullable(map.get(name))
+          .map(newName -> (_, attrs, b) -> b.node(newName, attrs));
   }
 
   static ComponentStyle anyMatch(ComponentStyle... styles) {

@@ -15,7 +15,7 @@ public final class DocumentManager {
 
   private final LinkedHashMap<Path, Data> modifiedPathMap = new LinkedHashMap<>();
 
-  private static Node readPathAsDocument(Path path) throws IOException {
+  public static Node readPathAsDocument(Path path) throws IOException {
     try(var reader = Files.newBufferedReader(path)) {
       return XML.transform(reader);
     }

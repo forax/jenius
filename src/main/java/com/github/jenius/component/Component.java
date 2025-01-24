@@ -14,7 +14,7 @@ public interface Component {
     return (name, attributes, nodeBuilder) -> nodeBuilder.node(name, attributes);
   }
 
-  static Component ignore() {
+  static Component discard() {
     return (_, _, _) -> {};
   }
 }
