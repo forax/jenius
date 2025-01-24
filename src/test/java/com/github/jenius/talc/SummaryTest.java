@@ -18,26 +18,14 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TalcGeneratorTest {
-  private static void assertSameDocument(String expectedText, String actualText) {
-    var diff = DiffBuilder.compare(expectedText)
-        .withTest(actualText)
-        .ignoreWhitespace()
-        .normalizeWhitespace()
-        .ignoreElementContentWhitespace()
-        .build();
-    if (diff.hasDifferences()) {
-      AssertionFailureBuilder.assertionFailure().message("nodes are not equivalent").expected(expectedText).actual(actualText).buildAndThrow();
-    }
-  }
-
+public class SummaryTest {
   @Test
   public void generateIndexSummary() throws IOException {
     Summary summary;
-    try(var input = TalcGenerator.class.getResourceAsStream("index.xumlv");
+    try(var input = SummaryTest.class.getResourceAsStream("index.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
-      summary = TalcGenerator.extractSummaryFromIndex(document);
+      summary = Summary.extractSummary(FileKind.INDEX, document);
     }
     assertEquals("Programmation Objet avec Java", summary.title());
   }
@@ -45,19 +33,20 @@ public class TalcGeneratorTest {
   @Test
   public void generateFileSummary() throws IOException {
     Summary summary;
-    try(var input = TalcGenerator.class.getResourceAsStream("td01.xumlv");
+    try(var input = SummaryTest.class.getResourceAsStream("td01.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
-      summary = TalcGenerator.extractSummaryFromFile(document);
+      summary = Summary.extractSummary(FileKind.FILE, document);
     }
     var expected = new Summary("Premiers pas en Java, chaînes de caractères, tableaux, boucles",
         List.of("Hello Groland", "Afficher les arguments de la ligne de commande", "Calculette simple", "Bien le bonjour", "De C vers Java"));
     assertEquals(expected, summary);
   }
 
+  // FIXME, need to be move somewhere else !
   @Test
   public void validateTemplate() throws IOException, URISyntaxException {
-    var input = Files.readString(Path.of(TalcGenerator.class.getResource("template.html").toURI()));
+    var input = Files.readString(Path.of(SummaryTest.class.getResource("template.html").toURI()));
     //assertSameDocument(input, input);
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var node = XML.transform(new StringReader(input), style);

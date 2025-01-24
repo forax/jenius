@@ -21,19 +21,12 @@ public final class DocumentManager {
     }
   }
 
-  private static Summary extractSummary(FileKind kind, Node document) throws IOException {
-    return switch (kind) {
-      case FILE -> TalcGenerator.extractSummaryFromFile(document);
-      case INDEX -> TalcGenerator.extractSummaryFromIndex(document);
-    };
-  }
-
   private Data getData(FileKind kind, Path path) throws IOException {
     try {
       return modifiedPathMap.computeIfAbsent(path, p -> {
         try {
           var document = readPathAsDocument(path);
-          var summary = extractSummary(kind, document);
+          var summary = Summary.extractSummary(kind, document);
           return new Data(document, summary);
         }  catch (IOException e) {
           throw new UncheckedIOException(e);
