@@ -278,7 +278,7 @@ public class XMLTest {
   }
 
   @Test
-  public void replayIdentity() throws IOException {
+  public void collectIdentity() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <foo>
@@ -297,13 +297,13 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
-        (_, attrs, b) -> b.replay(n -> n.createNode("whizz", n.childNodes())));
+        (_, _, b) -> b.collect((n, b2) -> b2.include(n.createNode("whizz", n.childNodes()))));
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
 
   @Test
-  public void replayIgnore() throws IOException {
+  public void collectIgnore() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
         <foo>
@@ -319,7 +319,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
-        (name, attrs, b) -> b.replay(n -> n.createNode("whizz")));
+        (name, attrs, b) -> b.collect((n, b2) -> b2.node("whizz")));
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }

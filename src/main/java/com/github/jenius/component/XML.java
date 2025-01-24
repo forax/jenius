@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -107,18 +106,13 @@ public class XML {
     }
 
     @Override
-    public final void replay(UnaryOperator<Node> function) {
-      Objects.requireNonNull(function);
+    public final void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer) {
+      Objects.requireNonNull(consumer);
+      Objects.requireNonNull(consumer);
       var ignore = (Action.Ignore) actionStack.pop();
       var document = Node.createDocument();
       var node = document.createNode(ignore.name, AttributesUtil.asMap(ignore.attrs));
-      actionStack.push(new Action.Replay(document, node, function));
-    }
-
-    @Override
-    public final void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer) {
-      Objects.requireNonNull(consumer);
-      replay(node -> { consumer.accept(node, delegatingNodeBuilder()); return null; });
+      actionStack.push(new Action.Collect(document, node, n -> consumer.accept(n, delegatingNodeBuilder())));
     }
 
     @Override
@@ -135,7 +129,7 @@ public class XML {
     enum EnumAction implements Action { EMIT }
     record Ignore(String name, Attributes attrs) implements Action {}
     record Replace(String newName) implements Action {}
-    record Replay(Node document, Node node, UnaryOperator<Node> function) implements Action {}
+    record Collect(Node document, Node node, Consumer<Node> consumer) implements Action {}
   }
 
   private static XMLFilterImpl filter(XMLReader xmlReader, ComponentStyle style) {
@@ -168,10 +162,10 @@ public class XML {
         switch (actionsStack.peek()) {
           case null -> {}  // no action yet
           case Action.EnumAction _, Action.Ignore _, Action.Replace _ -> {}
-          case Action.Replay(Node document, Node node, _) -> {
+          case Action.Collect(Node document, Node node, _) -> {
             var newNode = document.createNode(localName, AttributesUtil.asMap(attrs));
             node.appendChild(newNode);
-            actionsStack.push(new Action.Replay(document, newNode, null));
+            actionsStack.push(new Action.Collect(document, newNode, null));
             return;
           }
         }
@@ -197,12 +191,9 @@ public class XML {
           case Action.EnumAction.EMIT -> super.endElement(uri, localName, qName);
           case Action.Ignore _ -> {}
           case Action.Replace(String newName) -> super.endElement("", newName, newName);
-          case Action.Replay(_, Node node, UnaryOperator<Node> function) -> {
-            if (function != null) {
-              var newNode = function.apply(node);
-              if (newNode != null) {
-                newNode.visit(this);
-              }
+          case Action.Collect(_, Node node, Consumer<Node> consumer) -> {
+            if (consumer != null) {
+              consumer.accept(node);
             }
           }
         }
@@ -215,7 +206,7 @@ public class XML {
           case Action.EnumAction.EMIT -> super.characters(ch, start, length);
           case Action.Ignore _ -> {}
           case Action.Replace _ -> super.characters(ch, start, length);
-          case Action.Replay(_, Node node, _) -> node.appendText(new String(ch, start, length));
+          case Action.Collect(_, Node node, _) -> node.appendText(new String(ch, start, length));
         }
       }
 

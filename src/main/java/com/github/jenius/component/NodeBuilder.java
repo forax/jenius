@@ -51,8 +51,6 @@ public interface NodeBuilder {
 
   NodeBuilder include(Node node);
 
-  void replay(UnaryOperator<Node> function);
-
   void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer);
 
   NodeBuilder fragment(Consumer<? super NodeBuilder> children);
