@@ -40,25 +40,25 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
   }
 
   private static ComponentStyle defaultStyle() {
-    return ComponentStyle.of(Map.ofEntries(
-        Map.entry("exercise", (_, attrs, b) ->
+    return ComponentStyle.of(
+        "exercise", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "exercise"),c -> c
                 .node("h3", c2 -> c2
                     .text(attrs.getOrDefault("title", "")))
             )
         ),
-        Map.entry("section", (_, attrs, b) ->
+        "section", Component.of((_, attrs, b) ->
           b.node("div", Map.of("class", "section"), c -> c
               .node("h2", c2 -> c2
                   .text(attrs.getOrDefault("title", "")))
           )
         ),
-        Map.entry("paragraph", (_, attrs, b) ->
+        "paragraph", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "paragraph"))
         ),
-        Map.entry("list", (_, attrs, b) ->
+        "list", Component.of((_, attrs, b) ->
             b.node(attrs.containsKey("ordered") ? "ol" : "ul")),
-        Map.entry("image", (_, attrs, b) -> {
+        "image", Component.of((_, attrs, b) -> {
           var src = attrs.getOrDefault("src", "");
           var width = attrs.getOrDefault("width", "");
           var height = attrs.getOrDefault("height", "");
@@ -69,11 +69,11 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
               "height", height,
               "style", "height:" + height + ";width:" + width + ";align:" + align + ";"));
         }),
-        Map.entry("code", (_, _, b) ->
+        "code", Component.of((_, _, b) ->
             b.node("pre", "class", "code", "width", "100%")),
-        Map.entry("infos", (_, _, b) ->
+        "infos", Component.of((_, _, b) ->
             b.node("table", "style", "font-size:100%", "width", "100%")),
-        Map.entry("team", (_, _, b) ->
+        "team", Component.of((_, _, b) ->
             b.collect((team, b2) -> {
               var leaders = team.elements().stream().filter(n -> n.name().equals("leader")).toList();
               var members = team.elements().stream().filter(n -> n.name().equals("member")).toList();
@@ -91,21 +91,8 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
               });
             })
         ),
-        Map.entry("leader", (_, attrs, b) ->
-            b.node("div", "class", "leader", c -> {
-              c.text(attrs.getOrDefault("name", "???") + " -- ");
-              var www = attrs.get("www");
-              var mail = attrs.get("mail");
-              if (www != null) {
-                c.node("a", "href", www, c2 -> c2.text("www"));
-              }
-              c.text(" -- ");
-              if (mail != null) {
-                c.node("a", "href", mail, c2 -> c2.text("@"));
-              }
-            })),
-        Map.entry("member", (_, attrs, b) ->
-            b.node("div", "class", "member", c -> {
+        "leader", "member", Component.of((name, attrs, b) ->
+            b.node("div", "class", name, c -> {
               c.text(attrs.getOrDefault("name", "???") + " -- ");
               var www = attrs.get("www");
               var mail = attrs.get("mail");
@@ -117,7 +104,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
                 c.node("a", "href", mail, c2 -> c2.text("@"));
               }
             }))
-    ));
+    );
   }
 
   private Summary readFileSummary(Path filePath) {
@@ -131,30 +118,33 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
   private ComponentStyle file(FileKind kind, Path dirPath) throws IOException {
     var document = manager.getDocument(kind, dirPath);
     var summary = manager.getSummary(kind, dirPath);
+    var infosOpt = document.find("infos");
+    infosOpt.ifPresent(Node::removeFromParent);
     var breadcrumb = new BreadCrumb(List.of("IR1", "2024-2025"), List.of("../index.html", "../../index.html"));
-    return ComponentStyle.of(Map.of(
-        "insert-content", (_, _, b) -> {
+    return ComponentStyle.of(
+        "insert-content", Component.of((_, _, b) -> {
           for(var node : document.getFirstElement().childNodes()) {
             b.include(node);
           }
-        },
+        }),
         "title", Component.discard(),
-        "insert-title", (_, _, b) -> b.node("title").text(summary.title()),
-        "insert-title-text", (_, _, b) -> b.text(summary.title()),
-        "insert-breadcrumb", (_, _, b) -> {
-            var div = b.node("span", "class", "bread-crumb", c -> {
-              var titles = breadcrumb.titles();
-              var hrefs = breadcrumb.hrefs();
-              for(var i = 0; i < titles.size(); i++) {
-                if (i != 0) {
-                  c.text(" :: ");
-                }
-                c.node("a", "href", hrefs.get(i))
-                    .text(titles.get(i));
+        "insert-title", Component.of((_, _, b) -> b.node("title").text(summary.title())),
+        "insert-infos", Component.of((_, _, b) -> infosOpt.ifPresent(b::include)),
+        "insert-title-text", Component.of((_, _, b) -> b.text(summary.title())),
+        "insert-breadcrumb", Component.of((_, _, b) -> {
+          b.node("span", "class", "bread-crumb", c -> {
+            var titles = breadcrumb.titles();
+            var hrefs = breadcrumb.hrefs();
+            for(var i = 0; i < titles.size(); i++) {
+              if (i != 0) {
+                c.text(" :: ");
               }
-            });
-          },
-        "tdref", (_, attrs, b) -> {
+              var title = titles.get(i);
+              c.node("a", "href", hrefs.get(i), c2 -> c2.text(title));
+            }
+          });
+        }),
+        "tdref", Component.of((_, attrs, b) -> {
           var name = attrs.getOrDefault("name", "");
           var filePath = dirPath.resolve(name);
           var fileSummary = readFileSummary(filePath);
@@ -164,8 +154,8 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
             c.node("br");
             c.text(fileSummary.exercises().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
           });
-        }
-    ));
+        })
+    );
   }
 
   public void generate(FileKind kind, Path dirPath, Path destPath) throws IOException {

@@ -32,13 +32,13 @@ public class GeneratorTest {
 
   @Test
   public void generateFile() throws URISyntaxException, IOException {
-    var stylesheetPath = path("template.html");
+    var template = path("template.html");
     var root = path(".");
     var file = path("td01.xumlv");
     var output = root.resolve("target", mapping().apply("td01.xumlv"));
     Files.createDirectories(output.getParent());
 
-    var stylesheet = DocumentManager.readPathAsDocument(stylesheetPath);
+    var stylesheet = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager();
 
     var generator = new Generator(root, manager, mapping(), stylesheet);
@@ -47,13 +47,13 @@ public class GeneratorTest {
 
   @Test
   public void generateIndex() throws URISyntaxException, IOException {
-    var stylesheetPath = path("template.html");
+    var template = path("template.html");
     var root = path(".");
     var file = path("index.xumlv");
     var output = root.resolve("target", mapping().apply("index.xumlv"));
     Files.createDirectories(output.getParent());
 
-    var stylesheet = DocumentManager.readPathAsDocument(stylesheetPath);
+    var stylesheet = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager();
 
     var generator = new Generator(root, manager, mapping(), stylesheet);
