@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 public final class DocumentManager {
   private final Path root;
@@ -46,13 +47,16 @@ public final class DocumentManager {
       }
       var title = titleOpt.orElseThrow().text().strip();
       var exercises = td.childNodes().stream()
-            .filter(n -> !n.name().equals("title")).map(Node::text).toList();
+            .filter(n -> !n.name().equals("title"))
+            .map(n -> n.text().strip())
+            .filter(Predicate.not(String::isEmpty))
+            .toList();
       return Optional.of(new Summary(title, exercises));
   }
 
   static Summary defaultSummary(Optional<Summary> summaryOpt, String filename) {
     return summaryOpt
-        .orElseGet(() -> new Summary(Utils.removeExtension(filename), List.of()));
+        .orElseGet(() -> new Summary(Utils.removeExtension(filename)));
   }
 
   private void extractBreadcrumbs(Path dir, List<String> names, List<Path> hrefs) {
@@ -93,7 +97,7 @@ public final class DocumentManager {
         var indexPath = p.resolve("index.xumlv");
         if (!Files.exists(indexPath)) {
           var dirName = Utils.removeExtension(p.getFileName().toString());
-          return new Metadata.Dir(p, new Summary(dirName, List.of()));
+          return new Metadata.Dir(p, new Summary(dirName));
         }
         p = indexPath;
       }
@@ -101,7 +105,7 @@ public final class DocumentManager {
         return getFileMetadata(p);
       } catch (IOException _) {
         var dirName = Utils.removeExtension(p.getFileName().toString());
-        return new Metadata.Dir(p, new Summary(dirName, List.of()));
+        return new Metadata.Dir(p, new Summary(dirName));
       }
     });
   }

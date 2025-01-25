@@ -3,9 +3,7 @@ package com.github.jenius.talc;
 import com.github.jenius.component.Component;
 import com.github.jenius.component.ComponentStyle;
 import com.github.jenius.component.XML;
-import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.Test;
-import org.xmlunit.builder.DiffBuilder;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,7 +25,13 @@ public class SummaryTest {
       var document = XML.transform(reader);
       summary = DocumentManager.extractSummary(document).orElseThrow();
     }
-    assertEquals("Programmation Objet avec Java", summary.title());
+    assertAll(
+        () -> assertEquals("Programmation Objet avec Java", summary.title()),
+        () -> assertEquals(List.of(), summary.subsections()),
+        () -> assertEquals(0, summary.subsections().size())
+    );
+
+
   }
 
   @Test

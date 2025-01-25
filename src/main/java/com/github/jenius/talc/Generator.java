@@ -146,7 +146,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
             c.node("a", "href", mapping.apply(name), c2 ->
                 c2.text(refSummary.title()));
             c.node("br");
-            c.text(refSummary.exercises().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
+            c.text(refSummary.subsections().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
           });
         })
     );
