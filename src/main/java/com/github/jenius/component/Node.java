@@ -12,12 +12,14 @@ import java.io.UncheckedIOException;
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -254,7 +256,7 @@ public final class Node {
     var nodeList = domNode.getChildNodes();
     for(var i = 0; i < nodeList.getLength(); i++) {
       var item = nodeList.item(i);
-      if (name.equals(item.getNodeName())) {
+      if (item.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE && name.equals(item.getNodeName())) {
         return item;
       }
     }
@@ -268,5 +270,31 @@ public final class Node {
       domNode = element(domNode, name);
     }
     return new Node(domNode);
+  }
+
+  public Optional<Node> find(String name) {
+    Objects.requireNonNull(name);
+    var stack = new ArrayDeque<org.w3c.dom.Node>();
+    stack.offer(domNode);
+    org.w3c.dom.Node current;
+    while((current = stack.poll()) != null) {
+      if (current.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE && name.equals(current.getNodeName())) {
+        return Optional.of(new Node(current));
+      }
+      var nodeList = current.getChildNodes();
+      for(var i = 0; i < nodeList.getLength(); i++) {
+        var item = nodeList.item(i);
+        stack.push(item);
+      }
+    }
+    return Optional.empty();
+  }
+
+  public void removeFromParent() {
+    org.w3c.dom.Node parent = domNode.getParentNode();
+    if (parent == null) {
+      throw new IllegalStateException("no parent");
+    }
+    parent.removeChild(domNode);
   }
 }
