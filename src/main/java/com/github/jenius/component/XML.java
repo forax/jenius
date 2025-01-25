@@ -345,6 +345,7 @@ public class XML {
       transformer.setOutputProperty(OutputKeys.METHOD, outputKind.methodName());
       if (outputKind == OutputKind.HTML) {
         transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "");
+        xmlReader = HTMLElementValidator.validateHTMLElements(xmlReader);
       }
       var source = new SAXSource(xmlReader, inputSource);
       transformer.transform(source, result);

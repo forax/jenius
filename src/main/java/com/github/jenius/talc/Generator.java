@@ -31,8 +31,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         "link", "a",
         "bold", "b",
         "italic", "i",
-        "underline", "u",
-        "tt", "tt"
+        "underline", "u"
     );
   }
 
@@ -56,6 +55,9 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         ),
         "paragraph", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "paragraph"))
+        ),
+        "tt", Component.of((_, attrs, b) ->
+            b.node("span", Map.of("style", "font-family: monospace;"))
         ),
         "list", Component.of((_, attrs, b) ->
             b.node(attrs.containsKey("ordered") ? "ol" : "ul")),
@@ -145,7 +147,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
             c.text(" :: ");
           });
         }),
-        "tdref", Component.of((_, attrs, b) -> {
+        "tdref", "dir", Component.of((_, attrs, b) -> {
           var name = attrs.getOrDefault("name", "");
           var refPath = filePath.resolveSibling(name);
           var refSummary = readFileSummary(refPath);
