@@ -42,7 +42,7 @@ public class GeneratorTest {
     var manager = new DocumentManager();
 
     var generator = new Generator(root, manager, mapping(), stylesheet);
-    generator.generate(FileKind.FILE, file, output);
+    generator.generate(file, output);
   }
 
   @Test
@@ -57,6 +57,6 @@ public class GeneratorTest {
     var manager = new DocumentManager();
 
     var generator = new Generator(root, manager, mapping(), stylesheet);
-    generator.generate(FileKind.INDEX, file, output);
+    generator.generate(file, output);
   }
 }

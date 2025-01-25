@@ -14,18 +14,4 @@ public record Summary(String title, List<String> exercises) {
     Objects.requireNonNull(title);
     exercises = List.copyOf(exercises);
   }
-
-  public static Summary extractSummary(FileKind kind, Node document) throws IOException {
-    var node = XML.transform(document, ComponentStyle.of(Map.of(
-        "td",  (_, _, b) -> b.node("td"),
-        "title", (_, _, b) -> b.node("title"),
-        "exercise", (_, attrs, b) -> b
-            .node("exercise", children -> children
-                .text(attrs.get("title")))
-    )).ignoreAllOthers());
-    var root = node.getFirstElement();
-    return new Summary(
-        root.text().strip(),
-        root.childNodes().stream().skip(1).map(Node::text).toList());
-  }
 }

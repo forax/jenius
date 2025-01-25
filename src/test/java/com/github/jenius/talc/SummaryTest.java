@@ -25,7 +25,7 @@ public class SummaryTest {
     try(var input = SummaryTest.class.getResourceAsStream("index.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
-      summary = Summary.extractSummary(FileKind.INDEX, document);
+      summary = DocumentManager.extractSummary(document).orElseThrow();
     }
     assertEquals("Programmation Objet avec Java", summary.title());
   }
@@ -36,7 +36,7 @@ public class SummaryTest {
     try(var input = SummaryTest.class.getResourceAsStream("td01.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
-      summary = Summary.extractSummary(FileKind.FILE, document);
+      summary = DocumentManager.extractSummary(document).orElseThrow();
     }
     var expected = new Summary("Premiers pas en Java, chaînes de caractères, tableaux, boucles",
         List.of("Hello Groland", "Afficher les arguments de la ligne de commande", "Calculette simple", "Bien le bonjour", "De C vers Java"));

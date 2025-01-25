@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -107,19 +108,19 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
     );
   }
 
-  private Summary readFileSummary(Path filePath) {
+  private Summary readFileSummary(Path path) {
     try {
-      return manager.getSummary(FileKind.FILE, filePath);
-    } catch (IOException e) {  // create a fake summary
-      return new Summary(Utils.removeExtension(filePath.getFileName().toString()), List.of());
+      return manager.getMetadata(path).summary();
+    } catch (IOException e) {
+      return DocumentManager.defaultSummary(Optional.empty(), path);
     }
   }
 
-  private ComponentStyle file(FileKind kind, Path dirPath) throws IOException {
-    var document = manager.getDocument(kind, dirPath);
-    var summary = manager.getSummary(kind, dirPath);
-    var infosOpt = document.find("infos");
-    infosOpt.ifPresent(Node::removeFromParent);
+  private ComponentStyle file(Path filePath) throws IOException {
+    var metadata = manager.getMetadata(filePath);
+    var document = metadata.document();
+    var summary = metadata.summary();
+    var infosOpt = metadata.infosOpt();
     var breadcrumb = new BreadCrumb(List.of("IR1", "2024-2025"), List.of("../index.html", "../../index.html"));
     return ComponentStyle.of(
         "insert-content", Component.of((_, _, b) -> {
@@ -127,10 +128,8 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
             b.include(node);
           }
         }),
-        "title", Component.discard(),
-        "insert-title", Component.of((_, _, b) -> b.node("title").text(summary.title())),
-        "insert-infos", Component.of((_, _, b) -> infosOpt.ifPresent(b::include)),
         "insert-title-text", Component.of((_, _, b) -> b.text(summary.title())),
+        "insert-infos", Component.of((_, _, b) -> infosOpt.ifPresent(b::include)),
         "insert-breadcrumb", Component.of((_, _, b) -> {
           b.node("span", "class", "bread-crumb", c -> {
             var titles = breadcrumb.titles();
@@ -146,25 +145,24 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         }),
         "tdref", Component.of((_, attrs, b) -> {
           var name = attrs.getOrDefault("name", "");
-          var filePath = dirPath.resolve(name);
-          var fileSummary = readFileSummary(filePath);
+          var refPath = filePath.resolveSibling(name);
+          var refSummary = readFileSummary(refPath);
           b.node("li", c -> {
             c.node("a", "href", mapping.apply(name), c2 ->
-                c2.text(fileSummary.title()));
+                c2.text(refSummary.title()));
             c.node("br");
-            c.text(fileSummary.exercises().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
+            c.text(refSummary.exercises().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
           });
         })
     );
   }
 
-  public void generate(FileKind kind, Path dirPath, Path destPath) throws IOException {
-    Objects.requireNonNull(kind);
+  public void generate(Path dirPath, Path destPath) throws IOException {
     Objects.requireNonNull(dirPath);
     Objects.requireNonNull(destPath);
     var style = ComponentStyle.anyMatch(
         noAnswer(),
-        file(kind, dirPath),
+        file(dirPath),
         defaultStyle(),
         textDecoration()
     );

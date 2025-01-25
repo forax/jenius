@@ -382,12 +382,16 @@ public class XML {
     transform(filter(xmlReader, style), new InputSource(reader), result, outputKind);
   }
 
-  public static Node transform(Node document, ComponentStyle style) throws IOException {
+  public static Node transform(Node document, ComponentStyle style) {
     Objects.requireNonNull(document);
     Objects.requireNonNull(style);
     var xmlReader = createXMLReader(document);
     var result = new DOMResult();
-    transform(filter(xmlReader, style), null, result, OutputKind.XML);
+    try {
+      transform(filter(xmlReader, style), null, result, OutputKind.XML);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
     return new Node(result.getNode());
   }
 
