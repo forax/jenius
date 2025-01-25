@@ -15,15 +15,7 @@ public record Summary(String title, List<String> exercises) {
     exercises = List.copyOf(exercises);
   }
 
-  static Summary extractSummaryFromIndex(Node document) throws IOException {
-    var node = XML.transform(document, ComponentStyle.of(
-        "title", (_, _, b) -> b.node("title")
-    ).ignoreAllOthers());
-    return new Summary(node.getFirstElement().text(), List.of());
-  }
-
-
-  static Summary extractSummaryFromFile(Node document) throws IOException {
+  public static Summary extractSummary(FileKind kind, Node document) throws IOException {
     var node = XML.transform(document, ComponentStyle.of(Map.of(
         "td",  (_, _, b) -> b.node("td"),
         "title", (_, _, b) -> b.node("title"),
@@ -35,12 +27,5 @@ public record Summary(String title, List<String> exercises) {
     return new Summary(
         root.text().strip(),
         root.childNodes().stream().skip(1).map(Node::text).toList());
-  }
-
-  public static Summary extractSummary(FileKind kind, Node document) throws IOException {
-    return switch (kind) {
-      case FILE -> extractSummaryFromFile(document);
-      case INDEX -> extractSummaryFromIndex(document);
-    };
   }
 }
