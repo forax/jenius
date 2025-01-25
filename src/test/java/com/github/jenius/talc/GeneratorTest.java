@@ -39,7 +39,7 @@ public class GeneratorTest {
     Files.createDirectories(output.getParent());
 
     var stylesheet = DocumentManager.readPathAsDocument(template);
-    var manager = new DocumentManager();
+    var manager = new DocumentManager(root);
 
     var generator = new Generator(root, manager, mapping(), stylesheet);
     generator.generate(file, output);
@@ -54,7 +54,7 @@ public class GeneratorTest {
     Files.createDirectories(output.getParent());
 
     var stylesheet = DocumentManager.readPathAsDocument(template);
-    var manager = new DocumentManager();
+    var manager = new DocumentManager(root);
 
     var generator = new Generator(root, manager, mapping(), stylesheet);
     generator.generate(file, output);

@@ -69,7 +69,6 @@ public class NodeTest {
         """;
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var document = XML.transform(new StringReader(input), style);
-    System.err.println(document.toDebugString());
     var root = document.getFirstElement();
     assertAll(
         () -> assertEquals("foo", root.name()),

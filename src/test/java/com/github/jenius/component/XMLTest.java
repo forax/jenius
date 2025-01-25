@@ -392,7 +392,10 @@ public class XMLTest {
         </foo>
         """;
     var node = XML.transform(new StringReader(input));
-    assertSameDocument(input, node.toString());
+    var style = ComponentStyle.alwaysMatch(Component.identity());
+    var writer = new StringWriter();
+    XML.transform(node, writer, XML.OutputKind.XML, style);
+    assertSameDocument(input, writer.toString());
   }
 
   @Test

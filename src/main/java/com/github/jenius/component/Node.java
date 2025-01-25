@@ -113,21 +113,11 @@ public final class Node {
     }
   }
 
-  public String toDebugString() {
+  @Override
+  public String toString() {
     var builder = new StringBuilder();
     toDebugString(domNode, builder, "  ");
     return builder.toString();
-  }
-
-  @Override
-  public String toString() {
-    var writer = new StringWriter();
-    try {
-      XML.transform(this, writer, XML.OutputKind.XML,ComponentStyle.alwaysMatch(Component.identity()));
-    } catch(IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    return writer.toString();
   }
 
   public String name() {
@@ -135,7 +125,9 @@ public final class Node {
   }
 
   public String text() {
-    return domNode.getFirstChild().getTextContent();
+    org.w3c.dom.Node firstChild = domNode.getFirstChild();
+    String text;
+    return firstChild == null ? "" : ((text = firstChild.getTextContent()) == null) ? "" : text;
   }
 
   private static void visit(org.w3c.dom.Node domNode, ContentHandler handler) throws SAXException {

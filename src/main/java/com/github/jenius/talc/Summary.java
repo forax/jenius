@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public record Summary(String title, List<String> exercises) {
   public Summary {
-    Objects.requireNonNull(title);
+    Objects.requireNonNull(title, "title is null");
     exercises = List.copyOf(exercises);
   }
 }

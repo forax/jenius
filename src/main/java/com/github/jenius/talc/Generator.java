@@ -78,8 +78,6 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
             b.collect((team, b2) -> {
               var leaders = team.elements().stream().filter(n -> n.name().equals("leader")).toList();
               var members = team.elements().stream().filter(n -> n.name().equals("member")).toList();
-              System.err.println("leaders " + leaders);
-              System.err.println("members " + members);
               b2.node("tr", c -> {
                 c.node("td", "align", "left", "valign", "top", c2 -> {
                    c2.node("h3", "style","font-size:90%", c3 -> c3.text("Responsables"));
@@ -111,17 +109,22 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
   private Summary readFileSummary(Path path) {
     try {
       return manager.getMetadata(path).summary();
-    } catch (IOException e) {
+    } catch (IOException _) {
       return DocumentManager.defaultSummary(Optional.empty(), path);
     }
+  }
+
+  private String breadcrumbHref(BreadCrumb breadCrumb, int index) {
+    var size = breadCrumb.hrefs().size();
+    return "../".repeat(size - 1 - index) + mapping.apply(breadCrumb.hrefs().get(index).getFileName().toString());
   }
 
   private ComponentStyle file(Path filePath) throws IOException {
     var metadata = manager.getMetadata(filePath);
     var document = metadata.document();
     var summary = metadata.summary();
+    var breadcrumb = manager.getBreadCrumb(filePath);
     var infosOpt = metadata.infosOpt();
-    var breadcrumb = new BreadCrumb(List.of("IR1", "2024-2025"), List.of("../index.html", "../../index.html"));
     return ComponentStyle.of(
         "insert-content", Component.of((_, _, b) -> {
           for(var node : document.getFirstElement().childNodes()) {
@@ -132,15 +135,14 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         "insert-infos", Component.of((_, _, b) -> infosOpt.ifPresent(b::include)),
         "insert-breadcrumb", Component.of((_, _, b) -> {
           b.node("span", "class", "bread-crumb", c -> {
-            var titles = breadcrumb.titles();
-            var hrefs = breadcrumb.hrefs();
-            for(var i = 0; i < titles.size(); i++) {
-              if (i != 0) {
-                c.text(" :: ");
-              }
-              var title = titles.get(i);
-              c.node("a", "href", hrefs.get(i), c2 -> c2.text(title));
+            var names = breadcrumb.names();
+            for(var i = 0; i < names.size(); i++) {
+              c.text(" :: ");
+              var title = names.get(i);
+              var href = breadcrumbHref(breadcrumb, i);
+              c.node("a", "href", href, c2 -> c2.text(title));
             }
+            c.text(" :: ");
           });
         }),
         "tdref", Component.of((_, attrs, b) -> {
