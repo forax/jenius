@@ -102,7 +102,7 @@ public final class DocumentManager {
     var names = new ArrayList<String>();
     var hrefs = new ArrayList<Path>();
     extractBreadcrumbs(parent, names, hrefs);
-    return new BreadCrumb(names, hrefs);
+    return new BreadCrumb(names.reversed(), hrefs.reversed());
   }
 
   public Metadata getMetadata(Path path) throws IOException {
