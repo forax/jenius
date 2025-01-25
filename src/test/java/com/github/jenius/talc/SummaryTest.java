@@ -22,7 +22,7 @@ public class SummaryTest {
   @Test
   public void generateIndexSummary() throws IOException {
     Summary summary;
-    try(var input = SummaryTest.class.getResourceAsStream("root/index.xumlv");
+    try(var input = SummaryTest.class.getResourceAsStream("root/Java/index.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
       summary = DocumentManager.extractSummary(document).orElseThrow();
@@ -33,7 +33,7 @@ public class SummaryTest {
   @Test
   public void generateFileSummary() throws IOException {
     Summary summary;
-    try(var input = SummaryTest.class.getResourceAsStream("root/td01.xumlv");
+    try(var input = SummaryTest.class.getResourceAsStream("root/Java/td01.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
       summary = DocumentManager.extractSummary(document).orElseThrow();
