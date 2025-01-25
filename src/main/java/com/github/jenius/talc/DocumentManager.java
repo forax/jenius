@@ -16,11 +16,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class DocumentManager {
-  private record BreadcrumbData(String name, Path path) {}
-
   private final Path root;
+  private final HashMap<Path, Metadata.File> fileMetadataMap = new HashMap<>();
   private final HashMap<Path, Metadata> metadataMap = new HashMap<>();
-  private final HashMap<Path, BreadcrumbData> breadcrumbMap = new HashMap<>();
 
   public DocumentManager(Path root) {
     this.root = Objects.requireNonNull(root);
@@ -52,33 +50,17 @@ public final class DocumentManager {
       return Optional.of(new Summary(title, exercises));
   }
 
-  static Summary defaultSummary(Optional<Summary> summaryOpt, Path path) {
+  static Summary defaultSummary(Optional<Summary> summaryOpt, String filename) {
     return summaryOpt
-        .orElseGet(() -> new Summary(Utils.removeExtension(path.getFileName().toString()), List.of()));
-  }
-
-  private BreadcrumbData extractBreadcrumbData(Path dir) {
-    System.err.println("extract name from " + dir);
-    return breadcrumbMap.computeIfAbsent(dir, path -> {
-      var indexPath = path.resolve("index.xumlv");
-      if (!Files.exists(indexPath)) {
-        return new BreadcrumbData(path.getFileName().toString(), path);
-      }
-      try {
-        return new BreadcrumbData(getMetadata(indexPath).summary().title(), indexPath);
-      } catch (IOException _) {
-        return new BreadcrumbData(path.getFileName().toString(), path);
-      }
-    });
+        .orElseGet(() -> new Summary(Utils.removeExtension(filename), List.of()));
   }
 
   private void extractBreadcrumbs(Path dir, List<String> names, List<Path> hrefs) {
-    var depth = 0;
     Path parent;
     for(var path = dir;; path = parent) {
-      var breadcrumbData = extractBreadcrumbData(path);
-      names.add(breadcrumbData.name);
-      hrefs.add(breadcrumbData.path);
+      var breadcrumbData = getMetadata(path);
+      names.add(breadcrumbData.summary().title());
+      hrefs.add(breadcrumbData.path());
       if (path.equals(root)) {
         return;
       }
@@ -105,18 +87,38 @@ public final class DocumentManager {
     return new BreadCrumb(names.reversed(), hrefs.reversed());
   }
 
-  public Metadata getMetadata(Path path) throws IOException {
+  public Metadata getMetadata(Path path) {
+    return metadataMap.computeIfAbsent(path, p -> {
+      if (Files.isDirectory(p)) {
+        var indexPath = p.resolve("index.xumlv");
+        if (!Files.exists(indexPath)) {
+          var dirName = Utils.removeExtension(p.getFileName().toString());
+          return new Metadata.Dir(p, new Summary(dirName, List.of()));
+        }
+        p = indexPath;
+      }
+      try {
+        return getFileMetadata(p);
+      } catch (IOException _) {
+        var dirName = Utils.removeExtension(p.getFileName().toString());
+        return new Metadata.Dir(p, new Summary(dirName, List.of()));
+      }
+    });
+  }
+
+  public Metadata.File getFileMetadata(Path path) throws IOException {
     Objects.requireNonNull(path);
+    assert !Files.isDirectory(path);
     try {
-      return metadataMap.computeIfAbsent(path, p -> {
+      return fileMetadataMap.computeIfAbsent(path, p -> {
         try {
-          var document = readPathAsDocument(path);
-          var summary = defaultSummary(extractSummary(document), path);
-          document.find("title").ifPresent(Node::removeFromParent);      // remove title
+          var document = readPathAsDocument(p);
+          var summary = defaultSummary(extractSummary(document), p.getFileName().toString());
+          document.find("title").ifPresent(Node::removeFromParent);  // remove title
           var infosOpt = document.find("infos");
           infosOpt.ifPresent(Node::removeFromParent);  // remove infos
-          return new Metadata(document, summary, infosOpt);
-        }  catch (IOException e) {
+          return new Metadata.File(p, summary, document, infosOpt);
+        } catch (IOException e) {
           throw new UncheckedIOException(e);
         }
       });

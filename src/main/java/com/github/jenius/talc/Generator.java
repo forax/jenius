@@ -9,10 +9,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -74,6 +72,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         }),
         "code", Component.of((_, _, b) ->
             b.node("pre", "class", "code", "width", "100%")),
+        "photolink", Component.discard(),
         "infos", Component.of((_, _, b) ->
             b.node("table", "style", "font-size:100%", "width", "100%")),
         "team", Component.of((_, _, b) ->
@@ -108,21 +107,13 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
     );
   }
 
-  private Summary readFileSummary(Path path) {
-    try {
-      return manager.getMetadata(path).summary();
-    } catch (IOException _) {
-      return DocumentManager.defaultSummary(Optional.empty(), path);
-    }
-  }
-
   private String breadcrumbHref(BreadCrumb breadCrumb, int index) {
     var size = breadCrumb.hrefs().size();
     return "../".repeat(size - 1 - index) + mapping.apply(breadCrumb.hrefs().get(index).getFileName().toString());
   }
 
   private ComponentStyle file(Path filePath) throws IOException {
-    var metadata = manager.getMetadata(filePath);
+    var metadata = manager.getFileMetadata(filePath);
     var document = metadata.document();
     var summary = metadata.summary();
     var breadcrumb = manager.getBreadCrumb(filePath);
@@ -150,7 +141,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         "tdref", "dir", Component.of((_, attrs, b) -> {
           var name = attrs.getOrDefault("name", "");
           var refPath = filePath.resolveSibling(name);
-          var refSummary = readFileSummary(refPath);
+          var refSummary = manager.getMetadata(refPath).summary();
           b.node("li", c -> {
             c.node("a", "href", mapping.apply(name), c2 ->
                 c2.text(refSummary.title()));
