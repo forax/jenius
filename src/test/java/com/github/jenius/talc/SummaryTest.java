@@ -22,7 +22,7 @@ public class SummaryTest {
   @Test
   public void generateIndexSummary() throws IOException {
     Summary summary;
-    try(var input = SummaryTest.class.getResourceAsStream("index.xumlv");
+    try(var input = SummaryTest.class.getResourceAsStream("root/index.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
       summary = DocumentManager.extractSummary(document).orElseThrow();
@@ -33,7 +33,7 @@ public class SummaryTest {
   @Test
   public void generateFileSummary() throws IOException {
     Summary summary;
-    try(var input = SummaryTest.class.getResourceAsStream("td01.xumlv");
+    try(var input = SummaryTest.class.getResourceAsStream("root/td01.xumlv");
         var reader = new InputStreamReader(input, UTF_8)) {
       var document = XML.transform(reader);
       summary = DocumentManager.extractSummary(document).orElseThrow();
@@ -46,7 +46,7 @@ public class SummaryTest {
   // FIXME, need to be move somewhere else !
   @Test
   public void validateTemplate() throws IOException, URISyntaxException {
-    var input = Files.readString(Path.of(SummaryTest.class.getResource("template.html").toURI()));
+    var input = Files.readString(Path.of(SummaryTest.class.getResource("root/template.html").toURI()));
     //assertSameDocument(input, input);
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var node = XML.transform(new StringReader(input), style);
