@@ -1,6 +1,6 @@
 <?xml version="1.0"  encoding="UTF-8"?>
 <!DOCTYPE index PUBLIC "-//University of Marne-la-Vallee//DTD tipi//EN"
-                "http://igm.univ-mlv.fr/ens/resources/tipi.dtd">
+        "http://igm.univ-mlv.fr/ens/resources/tipi.dtd">
 <td>
  <title>
   Premiers pas en Java, chaînes de caractères, tableaux, boucles
@@ -168,7 +168,7 @@
      Soit un utilisant <tt>System.out.print()</tt>
     </item>
     <item>
-     Soit en utilisant le concaténation des chaînes de caractères
+     Soit en utilisant la concaténation des chaînes de caractères
      (le <tt>+</tt>).
     </item>
    </list>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ENTITY % outer "section|abstract|paragraph|code|list|center|table|srcref|br"> 
+<!ENTITY % myouter "section|abstract|paragraph|code|list|center|table">
+<!ENTITY % td "exercise|answer">
+<!ENTITY % texts "#PCDATA|tt|bold|sup|sub|italic|image|br|link|underline|applet|srcref|font|latex">
+<!ENTITY nbsp "&#160;">
+
+<!ELEMENT td (title,subtitle?,(%outer;|%td;)*)>
+<!ATTLIST td answer CDATA #IMPLIED>
+<!ATTLIST td draft CDATA #IMPLIED>
+<!ATTLIST td latex CDATA #IMPLIED>
+<!ATTLIST td xmlns CDATA #FIXED 'http://igm.univ-mlv.fr/ens/resources/tipi.dtd'>
+
+<!ELEMENT project (title,subtitle?,(%outer;)*)>
+<!ATTLIST project latex CDATA #IMPLIED>
+<!ATTLIST project answer CDATA #IMPLIED>
+<!ATTLIST project draft CDATA #IMPLIED>
+<!ATTLIST project xmlns CDATA #FIXED 'http://igm.univ-mlv.fr/ens/resources/tipi.dtd'>
+
+<!ELEMENT index (title,subtitle?,(infos)*,(%outer;)*)>
+<!ATTLIST index top CDATA #IMPLIED>
+<!ATTLIST index xmlns CDATA #FIXED 'http://igm.univ-mlv.fr/ens/resources/tipi.dtd'>
+
+<!ELEMENT doc (title,subtitle?,(%outer;)*)>
+<!ATTLIST doc latex CDATA #IMPLIED>
+<!ATTLIST doc answer CDATA #IMPLIED>
+<!ATTLIST doc draft CDATA #IMPLIED>
+<!ATTLIST doc xmlns CDATA #FIXED 'http://igm.univ-mlv.fr/ens/resources/tipi.dtd'>
+
+<!ELEMENT cours (title,subtitle?,(%outer;)*)>
+<!ATTLIST cours latex CDATA #IMPLIED>
+<!ATTLIST cours answer CDATA #IMPLIED>
+<!ATTLIST cours draft CDATA #IMPLIED>
+<!ATTLIST cours xmlns CDATA #FIXED 'http://igm.univ-mlv.fr/ens/resources/tipi.dtd'>
+
+<!ELEMENT infos ((team)*,(calendar)*,(projectref)*,(projectlink)*,(keydate)*,(photolink)*)>
+
+<!ELEMENT projectref EMPTY>
+<!ATTLIST projectref name CDATA #REQUIRED>
+
+
+<!ELEMENT photolink EMPTY>
+<!ATTLIST photolink url CDATA #REQUIRED>
+
+<!ELEMENT projectlink EMPTY>
+<!ATTLIST projectlink url CDATA #REQUIRED>
+<!ATTLIST projectlink title CDATA #REQUIRED>
+
+
+<!ELEMENT title (#PCDATA)>
+
+<!ELEMENT subtitle (%texts;)*>
+
+<!ELEMENT section (%texts;|%myouter;)*>
+<!ATTLIST section title CDATA #REQUIRED>
+
+<!ELEMENT abstract (%texts;)*>
+
+<!ELEMENT center (%texts;|table)*>
+
+<!ELEMENT questionetud (paragraph|code|list|center|table|br|answer)*>
+
+<!ELEMENT exercise (paragraph|code|list|center|table|br|answer)*>
+<!ATTLIST exercise title CDATA #REQUIRED>
+
+<!ELEMENT answerprof (srcref|paragraph|%myouter;)*>
+
+<!ELEMENT answer (srcref|paragraph|%myouter;)*>
+
+<!ELEMENT paragraph (%texts;|code|list|center|table)*>
+
+<!ELEMENT list (item|dir|tdref)+>
+
+<!ELEMENT tdref EMPTY>
+<!ATTLIST tdref name CDATA #REQUIRED>
+<!ELEMENT dir EMPTY>
+<!ATTLIST dir name CDATA #REQUIRED>
+
+<!ELEMENT keydate EMPTY>
+<!ATTLIST keydate title CDATA #REQUIRED>
+<!ATTLIST keydate date CDATA #REQUIRED>
+
+<!ATTLIST list style (ordered|unordered) "unordered">
+
+<!ELEMENT item (%texts;|paragraph|code|list|center|table|answer)*>
+<!ATTLIST item value CDATA #IMPLIED>
+
+<!ELEMENT team (leader|member|url)*>
+
+<!ELEMENT calendar EMPTY>
+<!ATTLIST calendar url CDATA #REQUIRED>
+
+<!ELEMENT leader EMPTY>
+<!ATTLIST leader name CDATA #REQUIRED>
+<!ATTLIST leader mail CDATA #REQUIRED>
+<!ATTLIST leader www CDATA #REQUIRED>
+
+<!ELEMENT member EMPTY>
+<!ATTLIST member name CDATA #REQUIRED>
+<!ATTLIST member mail CDATA #REQUIRED>
+<!ATTLIST member www CDATA #REQUIRED>
+
+<!ELEMENT url EMPTY>
+<!ATTLIST url href CDATA #REQUIRED>
+
+<!ELEMENT code (%texts;|list|center|paragraph)*>
+
+<!ELEMENT tt (%texts;)*>
+<!ELEMENT underline (%texts;)*>
+<!ELEMENT bold (%texts;)*>
+<!ELEMENT sup (%texts;)*>
+<!ELEMENT sub (%texts;)*>
+<!ELEMENT italic (%texts;)*>
+
+<!ELEMENT table (row)+>
+<!ATTLIST table border CDATA #IMPLIED>
+
+<!ELEMENT row (%texts;|tab)*>
+<!ELEMENT tab (%texts;)*>
+
+<!ELEMENT srcref EMPTY>
+<!ATTLIST srcref name CDATA #REQUIRED				 
+				 encoding CDATA "utf8">
+<!ATTLIST srcref link (true|false) "false">
+
+<!ELEMENT font (%texts;)*>
+<!ATTLIST font color CDATA #IMPLIED>
+
+<!ELEMENT latex (#PCDATA)>
+
+<!ELEMENT image EMPTY>
+<!ATTLIST image src CDATA #REQUIRED>
+<!ATTLIST image width CDATA #IMPLIED>
+<!ATTLIST image height CDATA #IMPLIED>
+<!ATTLIST image align CDATA #IMPLIED>
+
+<!ELEMENT link (%texts;)*>
+<!ATTLIST link href CDATA #REQUIRED>
+
+<!ELEMENT br EMPTY>
+
+<!ELEMENT applet (%texts;)*>
+<!ATTLIST applet code CDATA #REQUIRED
+	               archive CDATA #IMPLIED
+				   height CDATA #IMPLIED
+	               width CDATA "90%">
