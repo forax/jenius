@@ -41,7 +41,7 @@ public class GeneratorTest {
     var stylesheet = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager(root);
 
-    var generator = new Generator(root, manager, mapping(), stylesheet);
+    var generator = new Generator(manager, mapping(), stylesheet);
     generator.generate(file, output);
   }
 
@@ -56,7 +56,7 @@ public class GeneratorTest {
     var stylesheet = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager(root);
 
-    var generator = new Generator(root, manager, mapping(), stylesheet);
+    var generator = new Generator(manager, mapping(), stylesheet);
     generator.generate(file, output);
   }
 
@@ -71,7 +71,7 @@ public class GeneratorTest {
     var stylesheet = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager(root);
 
-    var generator = new Generator(root, manager, mapping(), stylesheet);
+    var generator = new Generator(manager, mapping(), stylesheet);
     generator.generate(file, output);
   }
 }

@@ -76,7 +76,6 @@ public final class DocumentManager {
   }
 
   public BreadCrumb getBreadCrumb(Path path) {
-    System.err.println("create " + path);
     var filename = path.getFileName().toString();
     var parent = path.getParent();
     if (filename.equals("index.xumlv")) {

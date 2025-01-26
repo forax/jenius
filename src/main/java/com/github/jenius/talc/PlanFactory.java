@@ -79,22 +79,22 @@ public final class PlanFactory {
     for(var name : dirSet) {
       var dirFile = dir.resolve(name);
       var destName = mapping.apply(name);
+      var destFile = dest.resolve(destName);
       dirSetMapped.add(destName);
       if (destSet.contains(destName)) {
-        var destFile = dest.resolve(destName);
         var dirFileTime = Files.getLastModifiedTime(dirFile);
         var destFileTime = Files.getLastModifiedTime(destFile);
         if (destFileTime.compareTo(dirFileTime) < 0) {  // use computeSHA1 depending on the kind of file ??
-          statusMap.put(dirFile, new Status.Updated(destFile));
+          statusMap.put(dirFile, new Status(Status.State.UPDATED, destFile));
         }
       } else {
-        statusMap.put(dirFile, Status.EnumStatus.ADDED);
+        statusMap.put(dirFile, new Status(Status.State.ADDED, destFile));
       }
     }
     for(var destName : destSet) {
       if (!dirSetMapped.contains(destName)) {
         var destPath = dest.resolve(destName);
-        statusMap.put(destPath, Status.EnumStatus.REMOVED);
+        statusMap.put(destPath, new Status(Status.State.REMOVED, destPath));
       }
     }
   }

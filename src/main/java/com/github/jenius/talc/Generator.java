@@ -14,12 +14,11 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-public record Generator(Path root, DocumentManager manager, UnaryOperator<String> mapping, Node stylesheet) {
+public record Generator(DocumentManager manager, UnaryOperator<String> mapping, Node template) {
   public Generator {
-    Objects.requireNonNull(root);
     Objects.requireNonNull(manager);
     Objects.requireNonNull(mapping);
-    Objects.requireNonNull(stylesheet);
+    Objects.requireNonNull(template);
   }
 
   private static ComponentStyle noAnswer() {
@@ -209,7 +208,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
         textDecoration()
     );
     try(var writer = Files.newBufferedWriter(destPath)) {
-      XML.transform(stylesheet, writer, XML.OutputKind.HTML, style);
+      XML.transform(template, writer, XML.OutputKind.HTML, style);
     } catch (UncheckedIOException e) {
       throw e.getCause();
     }
