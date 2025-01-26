@@ -5,12 +5,11 @@ import com.github.jenius.component.XML;
 import com.github.jenius.talc.DocumentManager;
 import com.github.jenius.talc.Generator;
 import com.github.jenius.talc.PlanFactory;
-import com.github.jenius.talc.Status;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.function.UnaryOperator;
 
 public class Main {
@@ -40,7 +39,7 @@ public class Main {
     var dest = Path.of(args[1]);
     var template = Path.of(args[2]);
 
-    System.out.println("jenius: dir " + dir.toAbsolutePath() + " dest " + dest.toAbsolutePath() + " template " + template);
+    System.out.println("INFO config: dir:" + dir.toAbsolutePath() + " dest:" + dest.toAbsolutePath() + " template:" + template);
 
     Node templateNode;
     try(var reader = Files.newBufferedReader(template)) {
@@ -48,27 +47,45 @@ public class Main {
     }
 
     var plan = planFactory.diff(dir, dest);
-    for (var entry : plan.statusMap().entrySet()) {
-      var path = entry.getKey();
-      if (path.equals(template)) {
-        System.out.println("skipped template.html");
-        continue;
+    var statusMap = new LinkedHashMap<>(plan.statusMap());
+    statusMap.remove(template);  // skip template.html
+
+    if (statusMap.isEmpty()) {
+      System.out.println("nothing to do !");
+      return;
+    }
+
+    for (var status : statusMap.sequencedValues().reversed()) {
+      switch (status.state()) {
+        case UPDATED, ADDED -> {}
+        case REMOVED -> {
+          Files.delete(status.destFile());
+        }
       }
+    }
+
+    var manager = new DocumentManager(dir);
+    var generator = new Generator(manager, mapping, templateNode);
+    for (var entry : statusMap.entrySet()) {
+      var path = entry.getKey();
       var status = entry.getValue();
       var state = status.state();
-      var destFile = status.destFile();
       switch (state) {
-        case REMOVED -> {
-        }
+        case REMOVED -> {}
         case UPDATED, ADDED -> {
+          var destFile = status.destFile();
           if (Files.isDirectory(path)) {
+            System.out.println("create directory " + destFile);
             Files.createDirectories(destFile);
             continue;
           }
-          var manager = new DocumentManager(dir);
-          var generator = new Generator(manager, mapping, templateNode);
-
-          System.out.println("generate " + path + " to " + destFile + " " + state);
+          var pathname = path.getFileName().toString();
+          if (!pathname.endsWith(".html") && !pathname.endsWith(".xumlv")) {
+            System.out.println("copy to " + destFile);
+            Files.copy(path, destFile);
+            continue;
+          }
+          System.out.println("generate " + destFile + " " + state);
           generator.generate(path, destFile);
         }
       }
