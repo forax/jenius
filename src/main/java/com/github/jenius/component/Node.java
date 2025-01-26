@@ -138,19 +138,23 @@ public final class Node {
       return;
     }
     var name = domNode.getNodeName();
-    if (nodeType == org.w3c.dom.Node.DOCUMENT_NODE) {
-      handler.startDocument();
-    } else {
-      handler.startElement("", name, name, AttributesUtil.asAttributes(domNode.getAttributes()));
+    switch (nodeType) {
+      case org.w3c.dom.Node.DOCUMENT_NODE ->
+          handler.startDocument();
+      case org.w3c.dom.Node.ELEMENT_NODE ->
+          handler.startElement("", name, name, AttributesUtil.asAttributes(domNode.getAttributes()));
+      default -> {}
     }
     var domList = domNode.getChildNodes();
     for(var i = 0; i < domList.getLength(); i++) {
       visit(domList.item(i), handler);
     }
-    if (nodeType == org.w3c.dom.Node.DOCUMENT_NODE) {
-      handler.endDocument();
-    } else {
-      handler.endElement("", name, name);
+    switch (nodeType) {
+      case org.w3c.dom.Node.DOCUMENT_NODE ->
+          handler.endDocument();
+      case org.w3c.dom.Node.ELEMENT_NODE ->
+          handler.endElement("", name, name);
+      default -> {}
     }
   }
 
