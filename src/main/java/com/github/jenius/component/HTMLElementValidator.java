@@ -48,13 +48,14 @@ final class HTMLElementValidator {
       "select", "textarea",
       // interactive
       "details", "dialog", "summary",
-      // web componenets
-      "slot", "template"
+      // web components
+      "slot", "template",
       // obsolete and deprecated
-      //"acronym", "big", "center", "content", "dir", "font", "frame",
+      "center", "tt"
+      //"acronym", "big", "content", "dir", "font", "frame",
       //"frameset", "image", "marquee", "menuitem", "nobr", "noembed",
       //"noframes", "param", "plaintext", "rb", "rtc", "shadow",
-      //"strike", "tt", "xmp"
+      //"strike", "xmp"
   );
 
   private static boolean isInvalidHTMLElement(String elementName) {
