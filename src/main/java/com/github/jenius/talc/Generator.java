@@ -22,57 +22,57 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
     Objects.requireNonNull(stylesheet);
   }
 
-  private static ComponentStyle textDecoration() {
-    return ComponentStyle.rename(
-        "css-link", "link",
-        "item", "li",
-        "link", "a",
-        "bold", "b",
-        "italic", "i",
-        "underline", "u"
-    );
-  }
-
   private static ComponentStyle noAnswer() {
     return ComponentStyle.of("answer", Component.discard());
   }
 
+  //
+  // xmlv style is defined in tipi.dtd
+  //
+  private static ComponentStyle textDecoration() {
+    return ComponentStyle.rename(
+        "css-link", "link",
+        "item", "li",
+
+        "underline", "u",
+        "bold", "b",
+        //"sup", "sup",
+        //"sub", "sub",
+        "italic", "i",
+
+        //"table", "table",
+        "row", "tr",
+        "tab", "td",
+
+        "link", "a"
+        //"br", "br"
+    );
+  }
+
   private static ComponentStyle defaultStyle() {
     return ComponentStyle.of(
-        "exercise", Component.of((_, attrs, b) ->
-            b.node("div", Map.of("class", "exercise"),c -> c
-                .node("h3", c2 -> c2
-                    .text(attrs.getOrDefault("title", "")))
-            )
-        ),
         "section", Component.of((_, attrs, b) ->
           b.node("div", Map.of("class", "section"), c -> c
               .node("h2", c2 -> c2
                   .text(attrs.getOrDefault("title", "")))
           )
         ),
+        "abstract", Component.of((_, attrs, b) ->
+            b.node("div", Map.of("class", "abstract"))
+        ),
+        "exercise", Component.of((_, attrs, b) ->
+            b.node("div", Map.of("class", "exercise"),c -> c
+                .node("h3", c2 -> c2
+                    .text(attrs.getOrDefault("title", "")))
+            )
+        ),
         "paragraph", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "paragraph"))
         ),
-        "tt", Component.of((_, attrs, b) ->
-            b.node("span", Map.of("style", "font-family: monospace;"))
-        ),
         "list", Component.of((_, attrs, b) ->
-            b.node(attrs.containsKey("ordered") ? "ol" : "ul")),
-        "image", Component.of((_, attrs, b) -> {
-          var src = attrs.getOrDefault("src", "");
-          var width = attrs.getOrDefault("width", "");
-          var height = attrs.getOrDefault("height", "");
-          var align = attrs.getOrDefault("align", "left");
-          b.node("img", Map.of(
-              "src", src,
-              "width", width,
-              "height", height,
-              "style", "height:" + height + ";width:" + width + ";align:" + align + ";"));
-        }),
-        "code", Component.of((_, _, b) ->
-            b.node("pre", "class", "code", "width", "100%")),
-        "photolink", Component.discard(),
+            b.node(attrs.containsKey("ordered") ? "ol" : "ul")
+        ),
+
         "infos", Component.of((_, _, b) ->
             b.node("table", "style", "font-size:100%", "width", "100%")),
         "team", Component.of((_, _, b) ->
@@ -91,6 +91,7 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
               });
             })
         ),
+        "calendar", "projectref", "projectlink", "keydate", "photolink", "url", Component.discard(),  // not supported anymore
         "leader", "member", Component.of((name, attrs, b) ->
             b.node("div", "class", name, c -> {
               c.text(attrs.getOrDefault("name", "???") + " -- ");
@@ -103,13 +104,44 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
               if (mail != null) {
                 c.node("a", "href", mail, c2 -> c2.text("@"));
               }
-            }))
+            })
+        ),
+
+        "code", Component.of((_, _, b) ->
+            b.node("pre", "class", "code", "width", "100%")
+        ),
+        "tt", Component.of((_, attrs, b) ->
+            b.node("span", Map.of("style", "font-family: monospace;"))
+        ),
+        "font", Component.of((_, attrs, b) ->
+            b.node("span", "style", "color:" + attrs.getOrDefault("color", "black"))
+        ),
+        "latex", "applet", Component.discard(),  // not supported anymore
+        "image", Component.of((_, attrs, b) -> {
+          var src = attrs.getOrDefault("src", "");
+          var width = attrs.getOrDefault("width", "");
+          var height = attrs.getOrDefault("height", "");
+          var align = attrs.getOrDefault("align", "left");
+          b.node("img", Map.of(
+              "src", src,
+              "width", width,
+              "height", height,
+              "style", "height:" + height + ";width:" + width + ";align:" + align + ";"));
+        })
     );
   }
 
   private String breadcrumbHref(BreadCrumb breadCrumb, int index) {
     var size = breadCrumb.hrefs().size();
     return "../".repeat(size - 1 - index) + mapping.apply(breadCrumb.hrefs().get(index).getFileName().toString());
+  }
+
+  private String readString(Path path) {
+    try {
+      return Files.readString(path);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   private ComponentStyle file(Path filePath) throws IOException {
@@ -148,6 +180,21 @@ public record Generator(Path root, DocumentManager manager, UnaryOperator<String
             c.node("br");
             c.text(refSummary.subsections().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
           });
+        }),
+        "srcref", Component.of((_, attrs, b) -> {
+          var link = attrs.get("link");
+          var name = attrs.getOrDefault("name", "");
+          if (link == null) {
+            b.node("pre", c ->
+              c.text(readString(filePath.resolveSibling(name)))
+            );
+            return;
+          }
+          b.node("div", "class", "noprint", c ->
+            c.node("a", "href", mapping.apply(name), c2 ->
+              c2.node("img", "class", "noprint", "src", "http://igm.univ-mlv.fr/ens/resources/file.png")
+            )
+          );
         })
     );
   }
