@@ -56,17 +56,20 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
                   .text(attrs.getOrDefault("title", "")))
           )
         ),
-        "abstract", Component.of((_, attrs, b) ->
-            b.node("div", Map.of("class", "abstract"))
+        "subsection", Component.of((_, attrs, b) ->
+            b.node("div", Map.of("class", "subsection"), c -> c
+                .node("h3", c2 -> c2
+                    .text(attrs.getOrDefault("title", "")))
+            )
+        ),
+        "abstract", "subtitle", "paragraph", Component.of((name, attrs, b) ->
+            b.node("div", Map.of("class", name))
         ),
         "exercise", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "exercise"),c -> c
                 .node("h3", c2 -> c2
                     .text(attrs.getOrDefault("title", "")))
             )
-        ),
-        "paragraph", Component.of((_, attrs, b) ->
-            b.node("div", Map.of("class", "paragraph"))
         ),
         "list", Component.of((_, attrs, b) ->
             b.node(attrs.containsKey("ordered") ? "ol" : "ul")
