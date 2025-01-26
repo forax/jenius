@@ -80,7 +80,7 @@ public class Main {
             continue;
           }
           var pathname = path.getFileName().toString();
-          if (!pathname.endsWith(".html") && !pathname.endsWith(".xumlv")) {
+          if (!pathname.endsWith(".xumlv")) {
             System.out.println("copy to " + destFile);
             Files.copy(path, destFile);
             continue;
