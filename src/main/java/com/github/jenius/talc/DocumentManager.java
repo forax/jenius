@@ -34,13 +34,18 @@ public final class DocumentManager {
   static Optional<Summary> extractSummary(Node document) {
       var node = XML.transform(document, ComponentStyle.of(Map.of(
           "td", (_, _, b) -> b.node("td"),
+          "index", (_, _, b) -> b.node("index"),
           "project", (_, _, b) -> b.node("project"),
           "title", (_, _, b) -> b.node("title"),
           "exercise", (_, attrs, b) -> b
               .node("exercise", children -> children
                   .text(attrs.get("title")))
       )).ignoreAllOthers());
-      var td = node.getFirstElement();
+      var tdOpt = node.getFirstElement();
+      if (tdOpt.isEmpty()) {
+        return Optional.empty();
+      }
+      var td = tdOpt.orElseThrow();
       var titleOpt = td.find("title");
       if (titleOpt.isEmpty()) {
         return Optional.empty();

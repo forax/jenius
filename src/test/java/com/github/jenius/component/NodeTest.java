@@ -29,7 +29,7 @@ public class NodeTest {
         () -> assertEquals(Map.of("foo", "bar"), node.attributes()),
         () -> assertEquals(1, document.childNodes().size()),
         () -> assertEquals(1, document.elements().size()),
-        () -> assertEquals("div", document.getFirstElement().name())
+        () -> assertEquals("div", document.getFirstElement().orElseThrow().name())
         );
   }
 
@@ -44,7 +44,7 @@ public class NodeTest {
         () -> assertEquals(1, node.childNodes().size()),
         () -> assertEquals(1, document.childNodes().size()),
         () -> assertEquals(1, document.elements().size()),
-        () -> assertEquals("span", node.getFirstElement().name())
+        () -> assertEquals("span", node.getFirstElement().orElseThrow().name())
     );
   }
 
@@ -69,12 +69,12 @@ public class NodeTest {
         """;
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var document = XML.transform(new StringReader(input), style);
-    var root = document.getFirstElement();
+    var root = document.getFirstElement().orElseThrow();
     assertAll(
         () -> assertEquals("foo", root.name()),
-        () -> assertEquals("bar", root.getFirstElement().name()),
-        () -> assertEquals(Map.of("glut", "true"), root.getFirstElement().attributes()),
-        () -> assertEquals("This is a text", root.getFirstElement().text().strip())
+        () -> assertEquals("bar", root.getFirstElement().orElseThrow().name()),
+        () -> assertEquals(Map.of("glut", "true"), root.getFirstElement().orElseThrow().attributes()),
+        () -> assertEquals("This is a text", root.getFirstElement().orElseThrow().text().strip())
     );
   }
 

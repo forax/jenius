@@ -85,13 +85,13 @@ public final class Node {
     domNode.appendChild(text);
   }
 
-  public Node getFirstElement() {
+  public Optional<Node> getFirstElement() {
     var nodeList = domNode.getChildNodes();
     return IntStream.range(0, nodeList.getLength())
         .mapToObj(nodeList::item)
         .filter(domNode -> domNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE)
         .map(Node::new)
-        .findFirst().orElseThrow();
+        .findFirst();
   }
 
   private static void toDebugString(org.w3c.dom.Node domNode, StringBuilder builder, String indent) {

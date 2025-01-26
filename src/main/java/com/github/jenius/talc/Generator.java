@@ -154,7 +154,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     var infosOpt = metadata.infosOpt();
     return ComponentStyle.of(
         "insert-content", Component.of((_, _, b) -> {
-          for(var node : document.getFirstElement().childNodes()) {
+          for(var node : document.getFirstElement().orElseThrow().childNodes()) {
             b.include(node);
           }
         }),
