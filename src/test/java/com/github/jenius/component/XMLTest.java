@@ -248,6 +248,29 @@ public class XMLTest {
   }
 
   @Test
+  public void hide() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          <whizz>
+            <bar glut="true">
+              This is a text
+            </bar>
+          </whizz>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+        </foo>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of("whizz", Component.of((_, _, b) -> b.hide()));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
   public void setAnAttribute() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>

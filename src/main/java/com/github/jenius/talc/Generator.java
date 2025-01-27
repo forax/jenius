@@ -22,7 +22,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
   }
 
   private static ComponentStyle noAnswer() {
-    return ComponentStyle.of("answer", Component.discard());
+    return ComponentStyle.of("answer", (_, _, b) -> b.hide());
   }
 
   //

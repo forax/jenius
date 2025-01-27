@@ -124,11 +124,17 @@ public class XML {
       return this;
     }
 
+    @Override
+    public final void hide() {
+      var _ = (Action.Ignore) actionStack.pop();
+      actionStack.push(Action.EnumAction.HIDE);
+    }
+
     abstract NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
   private sealed interface Action {
-    enum EnumAction implements Action { EMIT }
+    enum EnumAction implements Action { EMIT, HIDE }
     record Ignore(String name, Attributes attrs) implements Action {}
     record Replace(String newName) implements Action {}
     record Collect(Node document, Node node, Consumer<Node> consumer) implements Action {}
@@ -157,13 +163,16 @@ public class XML {
         };
       }
 
-
-
       @Override
       public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
         switch (actionsStack.peek()) {
           case null -> {}  // no action yet
-          case Action.EnumAction _, Action.Ignore _, Action.Replace _ -> {}
+          case Action.EnumAction.EMIT -> {}
+          case Action.EnumAction.HIDE -> {
+            actionsStack.push(Action.EnumAction.HIDE);
+            return;
+          }
+          case Action.Ignore _, Action.Replace _ -> {}
           case Action.Collect(Node document, Node node, _) -> {
             var newNode = document.createNode(localName, AttributesUtil.asMap(attrs));
             node.appendChild(newNode);
@@ -191,6 +200,7 @@ public class XML {
         var action = actionsStack.pop();
         switch (action) {
           case Action.EnumAction.EMIT -> super.endElement(uri, localName, qName);
+          case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
           case Action.Replace(String newName) -> super.endElement("", newName, newName);
           case Action.Collect(_, Node node, Consumer<Node> consumer) -> {
@@ -206,6 +216,7 @@ public class XML {
         var action = Objects.requireNonNull(actionsStack.peek());
         switch (action) {
           case Action.EnumAction.EMIT -> super.characters(ch, start, length);
+          case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
           case Action.Replace _ -> super.characters(ch, start, length);
           case Action.Collect(_, Node node, _) -> node.appendText(new String(ch, start, length));
