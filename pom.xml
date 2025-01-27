@@ -17,6 +17,7 @@
             <version>5.11.3</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.xmlunit</groupId>
             <artifactId>xmlunit-core</artifactId>
@@ -85,14 +86,15 @@
                             </execution>
                         </executions>
                         <configuration>
+                            <skipNativeTests>true</skipNativeTests>
                             <buildArgs>
+                                <buildArg>--verbose</buildArg>
                                 <buildArg>--enable-url-protocols=http</buildArg>
                                 <buildArg>--no-fallback</buildArg>
                             </buildArgs>
                             <agent>
                                 <enabled>true</enabled>
                             </agent>
-                            <skipNativeTests>true</skipNativeTests>
                         </configuration>
                     </plugin>
                 </plugins>
