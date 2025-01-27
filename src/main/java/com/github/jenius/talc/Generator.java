@@ -68,11 +68,11 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
         "exercise", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "exercise"),c -> c
                 .node("h3", c2 -> c2
-                    .text(attrs.getOrDefault("title", "")))
+                    .text("Exercice - " + attrs.getOrDefault("title", "")))
             )
         ),
         "list", Component.of((_, attrs, b) ->
-            b.node(attrs.containsKey("ordered") ? "ol" : "ul")
+            b.node("ordered".equals(attrs.get("style")) ? "ol" : "ul")
         ),
 
         "infos", Component.of((_, _, b) ->
