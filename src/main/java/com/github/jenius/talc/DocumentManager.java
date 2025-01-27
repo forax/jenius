@@ -65,6 +65,7 @@ public final class DocumentManager {
   private void extractBreadcrumbs(Path dir, List<String> names, List<Path> hrefs) {
     Path parent;
     for(var path = dir;; path = parent) {
+      assert Files.isDirectory(path);
       var breadcrumbData = getMetadata(path);
       names.add(breadcrumbData.summary().title());
       hrefs.add(breadcrumbData.path());
@@ -79,21 +80,14 @@ public final class DocumentManager {
   }
 
   public BreadCrumb getBreadCrumb(Path path) {
-    var filename = path.getFileName().toString();
-    var parent = path.getParent();
-    if (filename.equals("index.xumlv")) {
-      if (parent.equals(root)) {
-        return new BreadCrumb(List.of(), List.of());
-      }
-      parent = parent.getParent();
-    }
     var names = new ArrayList<String>();
     var hrefs = new ArrayList<Path>();
-    extractBreadcrumbs(parent, names, hrefs);
+    extractBreadcrumbs(path.getParent(), names, hrefs);
     return new BreadCrumb(names.reversed(), hrefs.reversed());
   }
 
   public Metadata getMetadata(Path path) {
+    Objects.requireNonNull(path);
     return metadataMap.computeIfAbsent(path, p -> {
       if (Files.isDirectory(p)) {
         var indexPath = p.resolve("index.xumlv");

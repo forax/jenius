@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,10 +39,10 @@ public class GeneratorTest {
     var output = root.resolveSibling("target").resolve("Java", mapping().apply("td01.xumlv"));
     Files.createDirectories(output.getParent());
 
-    var stylesheet = DocumentManager.readPathAsDocument(template);
+    var templateNode = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager(root);
 
-    var generator = new Generator(manager, mapping(), stylesheet);
+    var generator = new Generator(manager, mapping(), templateNode);
     generator.generate(file, output);
   }
 
@@ -53,10 +54,10 @@ public class GeneratorTest {
     var output = root.resolveSibling("target").resolve("Java", mapping().apply("index.xumlv"));
     Files.createDirectories(output.getParent());
 
-    var stylesheet = DocumentManager.readPathAsDocument(template);
+    var templateNode = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager(root);
 
-    var generator = new Generator(manager, mapping(), stylesheet);
+    var generator = new Generator(manager, mapping(), templateNode);
     generator.generate(file, output);
   }
 
@@ -68,10 +69,52 @@ public class GeneratorTest {
     var output = root.resolveSibling("target").resolve(mapping().apply("index.xumlv"));
     Files.createDirectories(output.getParent());
 
-    var stylesheet = DocumentManager.readPathAsDocument(template);
+    var templateNode = DocumentManager.readPathAsDocument(template);
     var manager = new DocumentManager(root);
 
-    var generator = new Generator(manager, mapping(), stylesheet);
+    var generator = new Generator(manager, mapping(), templateNode);
     generator.generate(file, output);
+  }
+
+  @Test
+  public void indexBreadcrumb() throws URISyntaxException {
+    var root = path("root");
+    var rootIndex = root.resolve("index.xumlv");
+    var file = root.resolve("Java", "index.xumlv");
+
+    var manager = new DocumentManager(root);
+    var breadcrumb = manager.getBreadCrumb(file);
+    var expected = new BreadCrumb(
+        List.of("2007-2008", "Programmation Objet avec Java"),
+        List.of(rootIndex, file));
+    assertEquals(expected, breadcrumb);
+  }
+
+  @Test
+  public void fileBreadcrumb() throws URISyntaxException {
+    var root = path("root");
+    var rootIndex = root.resolve("index.xumlv");
+    var javaIndex = root.resolve("Java", "index.xumlv");
+    var file = root.resolve("Java", "td01.xumlv");
+
+    var manager = new DocumentManager(root);
+    var breadcrumb = manager.getBreadCrumb(file);
+    var expected = new BreadCrumb(
+        List.of("2007-2008", "Programmation Objet avec Java"),
+        List.of(rootIndex, javaIndex));
+    assertEquals(expected, breadcrumb);
+  }
+
+  @Test
+  public void rootFileBreadcrumb() throws URISyntaxException {
+    var root = path("root");
+    var rootIndex = root.resolve("index.xumlv");
+
+    var manager = new DocumentManager(root);
+    var breadcrumb = manager.getBreadCrumb(rootIndex);
+    var expected = new BreadCrumb(
+        List.of("2007-2008"),
+        List.of(rootIndex));
+    assertEquals(expected, breadcrumb);
   }
 }

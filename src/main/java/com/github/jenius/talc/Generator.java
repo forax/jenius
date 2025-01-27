@@ -147,6 +147,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
   }
 
   private ComponentStyle file(Path filePath) throws IOException {
+    assert filePath.getFileName().toString().endsWith(".xumlv");
     var metadata = manager.getFileMetadata(filePath);
     var document = metadata.document();
     var summary = metadata.summary();
