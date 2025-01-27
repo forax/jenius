@@ -41,15 +41,21 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
 
         //"table", "table",
         "row", "tr",
-        "tab", "td",
+        "tab", "td"
 
-        "link", "a"
         //"br", "br"
     );
   }
 
   private static ComponentStyle defaultStyle() {
     return ComponentStyle.of(
+        "link", Component.of((_, attrs, b) -> {
+          var ref = attrs.getOrDefault("href", "");
+          if (!ref.contains("://") && ref.endsWith(".php")) {
+            ref = Utils.removeExtension(ref) + ".html";  // there is no PHP anymore
+          }
+          b.node("a", "href", ref);
+        }),
         "section", Component.of((_, attrs, b) ->
           b.node("div", Map.of("class", "section"), c -> c
               .node("h2", c2 -> c2
@@ -146,6 +152,19 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     }
   }
 
+  private static String localRefName(Path filePath, Metadata metadata) {
+    var filename = metadata.path().getFileName().toString();
+    return switch (metadata) {
+      case Metadata.Dir _ -> filename;
+      case Metadata.File file -> {
+        if (filename.equals("index.xumlv")) {
+          yield filePath.getParent().relativize(file.path()).toString();
+        }
+        yield filename;
+      }
+    };
+  }
+
   private ComponentStyle file(Path filePath) throws IOException {
     assert filePath.getFileName().toString().endsWith(".xumlv");
     var metadata = manager.getFileMetadata(filePath);
@@ -176,9 +195,11 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
         "tdref", "dir", Component.of((_, attrs, b) -> {
           var name = attrs.getOrDefault("name", "");
           var refPath = filePath.resolveSibling(name);
-          var refSummary = manager.getMetadata(refPath).summary();
+          var refMetadata = manager.getMetadata(refPath);
+          var refName = localRefName(filePath, refMetadata);
+          var refSummary = refMetadata.summary();
           b.node("li", c -> {
-            c.node("a", "href", mapping.apply(name), c2 ->
+            c.node("a", "href", mapping.apply(refName), c2 ->
                 c2.text(refSummary.title()));
             c.node("br");
             c.text(refSummary.subsections().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
