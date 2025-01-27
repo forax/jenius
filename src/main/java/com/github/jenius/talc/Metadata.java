@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
-public interface Metadata {
+public sealed interface Metadata {
   record File(Path path, Summary summary, Node document, Optional<Node> infosOpt) implements Metadata {
     public File {
       Objects.requireNonNull(path);
