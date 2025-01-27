@@ -23,10 +23,12 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.sax.SAXSource;
@@ -340,6 +342,13 @@ public class XML {
 
   private static void transform(XMLReader xmlReader, InputSource inputSource, Result result, OutputKind outputKind) throws IOException {
     var transformerFactory = SAXTransformerFactory.newInstance();
+    transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+    try {
+      transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+    } catch(TransformerConfigurationException e) {
+      throw new IOException(e);
+    }
     try {
       var transformer = transformerFactory.newTransformer();
       transformer.setOutputProperty(OutputKeys.METHOD, outputKind.methodName());
