@@ -35,11 +35,9 @@ public final class DocumentManager {
       var node = XML.transform(document, ComponentStyle.of(Map.of(
           "td", (_, _, b) -> b.node("td"),
           "index", (_, _, b) -> b.node("index"),
-          "project", (_, _, b) -> b.node("project"),
           "title", (_, _, b) -> b.node("title"),
-          "exercise", (_, attrs, b) -> b
-              .node("exercise", children -> children
-                  .text(attrs.get("title")))
+          "exercise", (_, attrs, b) ->
+              b.node("exercise", "title", attrs.getOrDefault("title", ""))
       )).ignoreAllOthers());
       var tdOpt = node.getFirstElement();
       if (tdOpt.isEmpty()) {
@@ -52,8 +50,8 @@ public final class DocumentManager {
       }
       var title = titleOpt.orElseThrow().text().strip();
       var exercises = td.childNodes().stream()
-            .filter(n -> !n.name().equals("title"))
-            .map(n -> n.text().strip())
+            .filter(n -> n.name().equals("exercise"))
+            .map(n -> n.attributes().getOrDefault("title", "").strip())
             .filter(Predicate.not(String::isEmpty))
             .toList();
       return Optional.of(new Summary(title, exercises));
