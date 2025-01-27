@@ -89,19 +89,22 @@ public final class DocumentManager {
   public Metadata getMetadata(Path path) {
     Objects.requireNonNull(path);
     return metadataMap.computeIfAbsent(path, p -> {
+      Path file;
       if (Files.isDirectory(p)) {
-        var indexPath = p.resolve("index.xumlv");
-        if (!Files.exists(indexPath)) {
+        var index = p.resolve("index.xumlv");
+        if (!Files.exists(index)) {
           var dirName = Utils.removeExtension(p.getFileName().toString());
           return new Metadata.Dir(p, new Summary(dirName));
         }
-        p = indexPath;
+        file = index;
+      } else {
+        file = p;
       }
       try {
-        return getFileMetadata(p);
+        return getFileMetadata(file);
       } catch (IOException _) {
-        var dirName = Utils.removeExtension(p.getFileName().toString());
-        return new Metadata.Dir(p, new Summary(dirName));
+        var dirName = Utils.removeExtension(file.getFileName().toString());
+        return new Metadata.Dir(file, new Summary(dirName));
       }
     });
   }
