@@ -5,11 +5,13 @@ import com.github.jenius.component.XML;
 import com.github.jenius.talc.DocumentManager;
 import com.github.jenius.talc.Generator;
 import com.github.jenius.talc.PlanFactory;
+import com.github.jenius.talc.Status;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.SequencedMap;
 import java.util.function.UnaryOperator;
 
 public class Main {
@@ -26,35 +28,7 @@ public class Main {
     return filename.substring(0, index) + "." + newExtension;
   }
 
-  public static void main(String[] args) throws IOException {
-    if (args.length != 3) {
-      System.err.println("  jenius sourceDir destinationDir template");
-      System.exit(1);
-      return;
-    }
-
-    var mapping = (UnaryOperator<String>) Main::mapping;
-    var planFactory = new PlanFactory(mapping);
-    var dir = Path.of(args[0]);
-    var dest = Path.of(args[1]);
-    var template = Path.of(args[2]);
-
-    System.out.println("INFO config: dir:" + dir.toAbsolutePath() + " dest:" + dest.toAbsolutePath() + " template:" + template);
-
-    Node templateNode;
-    try(var reader = Files.newBufferedReader(template)) {
-      templateNode = XML.transform(reader);
-    }
-
-    var plan = planFactory.diff(dir, dest);
-    var statusMap = new LinkedHashMap<>(plan.statusMap());
-    statusMap.remove(template);  // skip template.html
-
-    if (statusMap.isEmpty()) {
-      System.out.println("nothing to do !");
-      return;
-    }
-
+  private static void deleteFiles(SequencedMap<Path, Status> statusMap) throws IOException {
     for (var status : statusMap.sequencedValues().reversed()) {
       switch (status.state()) {
         case UPDATED, ADDED -> {}
@@ -63,9 +37,9 @@ public class Main {
         }
       }
     }
+  }
 
-    var manager = new DocumentManager(dir);
-    var generator = new Generator(manager, mapping, templateNode);
+  private static void generateFiles(Generator generator, SequencedMap<Path, Status> statusMap) throws IOException {
     for (var entry : statusMap.entrySet()) {
       var path = entry.getKey();
       var status = entry.getValue();
@@ -90,5 +64,44 @@ public class Main {
         }
       }
     }
+  }
+
+  public static void main(String[] args) throws IOException {
+    if (args.length != 3) {
+      System.err.println("  jenius sourceDir destinationDir template");
+      System.exit(1);
+      return;
+    }
+
+    var mapping = (UnaryOperator<String>) Main::mapping;
+    var planFactory = new PlanFactory(mapping);
+    var dir = Path.of(args[0]);
+    var dest = Path.of(args[1]);
+    var template = Path.of(args[2]);
+
+    System.out.println("INFO config: dir:" + dir.toAbsolutePath() + " dest:" + dest.toAbsolutePath() + " template:" + template);
+
+    Node templateNode;
+    try(var reader = Files.newBufferedReader(template)) {
+      templateNode = XML.transform(reader);
+    }
+
+    // do a diff between dir and dest
+    var plan = planFactory.diff(dir, dest);
+    var statusMap = new LinkedHashMap<>(plan.statusMap());
+    statusMap.remove(template);  // skip template.html
+
+    if (statusMap.isEmpty()) {
+      System.out.println("nothing to do !");
+      return;
+    }
+
+    // remove supplementary files in dest
+    deleteFiles(statusMap);
+
+    // generates modified files in dest
+    var manager = new DocumentManager(dir);
+    var generator = new Generator(manager, mapping, templateNode);
+    generateFiles(generator, statusMap);
   }
 }

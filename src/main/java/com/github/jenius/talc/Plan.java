@@ -3,14 +3,14 @@ package com.github.jenius.talc;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
+import java.util.SequencedMap;
 import java.util.StringJoiner;
 
-public record Plan(Map<Path, Status> statusMap) {
+public record Plan(SequencedMap<Path, Status> statusMap) {
   public Plan {
     Objects.requireNonNull(statusMap);
-    statusMap = Collections.unmodifiableMap(new LinkedHashMap<>(statusMap));
+    statusMap = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(statusMap));
   }
 
   @Override
