@@ -144,11 +144,11 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     return "../".repeat(size - 1 - index) + mapping.apply(breadCrumb.hrefs().get(index).getFileName().toString());
   }
 
-  private String readString(Path path) {
+  private String readContent(Path path) {
     try {
       return Files.readString(path);
     } catch (IOException e) {
-      throw new UncheckedIOException(e);
+      return null;
     }
   }
 
@@ -208,14 +208,16 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
         "srcref", Component.of((_, attrs, b) -> {
           var link = attrs.get("link");
           var name = attrs.getOrDefault("name", "");
+          var href = (link == null) ? name : link;
           if (link == null) {
-            b.node("pre", c ->
-              c.text(readString(filePath.resolveSibling(name)))
-            );
-            return;
+            var content = readContent(filePath.resolveSibling(name));
+            if (content != null) {
+              b.node("pre", c -> c.text(content));
+              return;
+            }
           }
           b.node("div", "class", "noprint", c ->
-            c.node("a", "href", mapping.apply(name), c2 ->
+            c.node("a", "href", mapping.apply(href), c2 ->
               c2.node("img", "class", "noprint", "src", "http://igm.univ-mlv.fr/ens/resources/file.png")
             )
           );
