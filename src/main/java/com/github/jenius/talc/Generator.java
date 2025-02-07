@@ -105,12 +105,12 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
               c.text(attrs.getOrDefault("name", "???") + " -- ");
               var www = attrs.get("www");
               var mail = attrs.get("mail");
-              if (www != null) {
+              if (www != null && !www.isEmpty()) {
                 c.node("a", "href", www, c2 -> c2.text("www"));
               }
               c.text(" -- ");
-              if (mail != null) {
-                c.node("a", "href", mail, c2 -> c2.text("@"));
+              if (mail != null && !mail.isEmpty()) {
+                c.node("a", "href", "mailto:" + mail, c2 -> c2.text("@"));
               }
             })
         ),
