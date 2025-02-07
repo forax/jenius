@@ -1,11 +1,5 @@
 package com.github.jenius.component;
 
-import org.jsoup.nodes.XmlDeclaration;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -107,10 +101,10 @@ public final class Node {
     return jsoupNode instanceof org.jsoup.nodes.Element element ? element.text() : "";
   }
 
-  static void visit(org.jsoup.nodes.Node jsoupNode, ContentHandler handler) throws SAXException {
+  static void visit(org.jsoup.nodes.Node jsoupNode, XML.ContentHandler handler) {
     switch (jsoupNode) {
       case org.jsoup.nodes.XmlDeclaration _ -> {
-          handler.declaration(jsoupNode.attr("version"), jsoupNode.attr("encoding"), "");
+          handler.declaration(jsoupNode.attr("version"), jsoupNode.attr("encoding"));
           return;
       }
       case org.jsoup.nodes.DocumentType _ -> { return; }  // ignore
@@ -119,13 +113,17 @@ public final class Node {
           return;
         }
         var text = textNode.getWholeText();
-        handler.characters(text.toCharArray(), 0, text.length());
+        handler.characters(text);
         return;
       }
       case org.jsoup.nodes.Document _ -> handler.startDocument();
       case org.jsoup.nodes.Element element -> {
         var name = element.nodeName();
-        handler.startElement("", name, name, AttributesUtil.asAttributes(jsoupNode.attributes()));
+        handler.startElement(name, CompactMap.from(c -> {
+          for(var attribute : jsoupNode.attributes()) {
+            c.accept(attribute.getKey(), attribute.getValue());
+          }
+        }));
       }
       default -> {}
     }
@@ -136,33 +134,33 @@ public final class Node {
       case org.jsoup.nodes.Document _ -> handler.endDocument();
       case org.jsoup.nodes.Element element -> {
         var name = element.nodeName();
-        handler.endElement("", name, name);
+        handler.endElement(name);
       }
       default -> {}
     }
   }
 
-  void visit(ContentHandler handler) throws SAXException {
+  void visit(XML.ContentHandler handler) {
     visit(jsoupNode, handler);
   }
 
-  static ContentHandler asContentHandler(org.jsoup.nodes.Document document) {
+  static XML.ContentHandler asContentHandler(org.jsoup.nodes.Document document) {
     var stack = new ArrayDeque<org.jsoup.nodes.Element>();
     stack.push(document);
-    return new DefaultHandler() {
+    return new XML.ContentHandler() {
       @Override
-      public void declaration(String version, String encoding, String standalone) {
-        var declaration = new XmlDeclaration("xml", false)
+      public void declaration(String version, String encoding) {
+        var declaration = new org.jsoup.nodes.XmlDeclaration("xml", false)
             .attr("version", version)
             .attr("encoding", encoding);
         document.appendChild(declaration);
       }
 
       @Override
-      public void startElement(String uri, String localName, String qName, Attributes atts) {
-        var element = document.createElement(localName);
-        for(var i = 0; i < atts.getLength(); i++) {
-          element.attr(atts.getLocalName(i), atts.getValue(i));
+      public void startElement(String name, Map<String,String> attrs) {
+        var element = document.createElement(name);
+        for(var entry : attrs.entrySet()) {
+          element.attr(entry.getKey(), entry.getValue());
         }
         var parent = Objects.requireNonNull(stack.peek());
         parent.appendChild(element);
@@ -170,16 +168,21 @@ public final class Node {
       }
 
       @Override
-      public void endElement(String uri, String localName, String qName) {
-        assert stack.peek() != null && stack.peek().nodeName().equals(localName);
+      public void endElement(String name) {
+        assert stack.peek() != null && stack.peek().nodeName().equals(name);
         stack.pop();
       }
 
       @Override
-      public void characters(char[] ch, int start, int length) {
+      public void characters(String text) {
         var element = Objects.requireNonNull(stack.peek());
-        element.appendText(new String(ch, start, length));
+        element.appendText(text);
       }
+
+      @Override
+      public void startDocument() {}
+      @Override
+      public void endDocument() {}
     };
   }
 

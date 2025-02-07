@@ -11,23 +11,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.jsoup.parser.Parser;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
 
 public class XML {
-  private static final class UncheckedSAXException extends RuntimeException {
-    private final SAXException saxException;
-
-    private UncheckedSAXException(SAXException saxException) {
-      this.saxException = saxException;
-    }
+  interface ContentHandler {
+    void declaration(String version, String encoding);
+    void startDocument();
+    void endDocument();
+    void startElement(String name, Map<String,String> attrs);
+    void endElement(String name);
+    void characters(String content);
   }
 
   private static abstract class FilterHandler implements ContentHandler {
@@ -35,31 +27,6 @@ public class XML {
 
     private FilterHandler(ContentHandler delegate) {
       this.delegate = Objects.requireNonNull(delegate);
-    }
-
-    @Override
-    public final void setDocumentLocator(Locator locator) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public final void startPrefixMapping(String prefix, String uri) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public final void endPrefixMapping(String prefix) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public final void ignorableWhitespace(char[] ch, int start, int length) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public void processingInstruction(String target, String data) {
-      throw new UnsupportedOperationException();
-    }
-    @Override
-    public void skippedEntity(String name) {
-      throw new UnsupportedOperationException();
     }
   }
 
@@ -75,35 +42,22 @@ public class XML {
     private NodeBuilder delegatingNodeBuilder() {
       return new AbstractNodeBuilder(filter, actionStack) {
         @Override
-        public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
-          filter.startElement("", name, name, AttributesUtil.asAttributes(map));
+        public NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
+          Objects.requireNonNull(name);
+          Objects.requireNonNull(map);
+          Objects.requireNonNull(children);
+          filter.startElement(name, map);
           children.accept(this);
-          filter.endElement("", name, name);
+          filter.endElement(name);
           return this;
         }
       };
     }
 
     @Override
-    public final NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
-      Objects.requireNonNull(name);
-      Objects.requireNonNull(map);
-      Objects.requireNonNull(children);
-      try {
-        return saxNode(name, map, children);
-      } catch (SAXException e) {
-        throw new UncheckedSAXException(e);
-      }
-    }
-
-    @Override
     public final NodeBuilder text(String text) {
       Objects.requireNonNull(text);
-      try {
-        filter.delegate.characters(text.toCharArray(), 0, text.length());
-      } catch (SAXException e) {
-        throw new UncheckedSAXException(e);
-      }
+      filter.delegate.characters(text);
       return this;
     }
 
@@ -117,11 +71,7 @@ public class XML {
     @Override
     public final NodeBuilder include(Node node) {
       Objects.requireNonNull(node);
-      try {
-        node.visit(filter);
-      } catch (SAXException e) {
-        throw new UncheckedSAXException(e);
-      }
+      node.visit(filter);
       return this;
     }
 
@@ -131,7 +81,7 @@ public class XML {
       Objects.requireNonNull(consumer);
       var ignore = (Action.Ignore) actionStack.pop();
       var document = Node.createDocument();
-      var node = document.createNode(ignore.name, AttributesUtil.asMap(ignore.attrs));
+      var node = document.createNode(ignore.name, ignore.attrs);
       actionStack.push(new Action.Collect(document, node, n -> consumer.accept(n, delegatingNodeBuilder())));
     }
 
@@ -147,13 +97,11 @@ public class XML {
       var _ = (Action.Ignore) actionStack.pop();
       actionStack.push(Action.EnumAction.HIDE);
     }
-
-    abstract NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException;
   }
 
   private sealed interface Action {
     enum EnumAction implements Action { EMIT, HIDE }
-    record Ignore(String name, Attributes attrs) implements Action {}
+    record Ignore(String name, Map<String,String> attrs) implements Action {}
     record Replace(String newName) implements Action {}
     record Collect(Node document, Node node, Consumer<Node> consumer) implements Action {}
   }
@@ -166,12 +114,15 @@ public class XML {
           private boolean calledOnce;
 
           @Override
-          public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
+          public NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(map);
+            Objects.requireNonNull(children);
             if (calledOnce) {
               throw new IllegalStateException("this builder has already called once " + name + " " + map);
             }
             calledOnce = true;
-            delegate.startElement("", name, name, AttributesUtil.asAttributes(map));
+            delegate.startElement(name, map);
             var _ = (Action.Ignore) actionsStack.pop();
             actionsStack.push(new Action.Replace(name));
             children.accept(super.delegatingNodeBuilder());
@@ -181,7 +132,22 @@ public class XML {
       }
 
       @Override
-      public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
+      public void declaration(String version, String encoding) {
+        delegate.declaration(version, encoding);
+      }
+
+      @Override
+      public void startDocument() {
+        delegate.startDocument();
+      }
+
+      @Override
+      public void endDocument() {
+        delegate.endDocument();
+      }
+
+      @Override
+      public void startElement(String name, Map<String,String> attrs) {
         switch (actionsStack.peek()) {
           case null -> {}  // no action yet
           case Action.EnumAction.EMIT -> {}
@@ -191,35 +157,31 @@ public class XML {
           }
           case Action.Ignore _, Action.Replace _ -> {}
           case Action.Collect(Node document, Node node, _) -> {
-            var newNode = document.createNode(localName, AttributesUtil.asMap(attrs));
+            var newNode = document.createNode(name, attrs);
             node.appendChild(newNode);
             actionsStack.push(new Action.Collect(document, newNode, null));
             return;
           }
         }
-        var componentOpt = style.lookup(localName);
+        var componentOpt = style.lookup(name);
         if (componentOpt.isPresent()) {
           var component = componentOpt.orElseThrow();
-          actionsStack.push(new Action.Ignore(localName, attrs));
-          try {
-            component.render(localName, AttributesUtil.asMap(attrs), rewritingNodeBuilder());
-          } catch (UncheckedSAXException e) {
-            throw e.saxException;
-          }
+          actionsStack.push(new Action.Ignore(name, attrs));
+          component.render(name, attrs, rewritingNodeBuilder());
         } else {
           actionsStack.push(Action.EnumAction.EMIT);
-          delegate.startElement(uri, localName, qName, attrs);
+          delegate.startElement(name, attrs);
         }
       }
 
       @Override
-      public void endElement(String uri, String localName, String qName) throws SAXException {
+      public void endElement(String name) {
         var action = actionsStack.pop();
         switch (action) {
-          case Action.EnumAction.EMIT -> delegate.endElement(uri, localName, qName);
+          case Action.EnumAction.EMIT -> delegate.endElement(name);
           case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
-          case Action.Replace(String newName) -> delegate.endElement("", newName, newName);
+          case Action.Replace(String newName) -> delegate.endElement(newName);
           case Action.Collect(_, Node node, Consumer<Node> consumer) -> {
             if (consumer != null) {
               consumer.accept(node);
@@ -229,57 +191,49 @@ public class XML {
       }
 
       @Override
-      public void characters(char[] ch, int start, int length) throws SAXException {
+      public void characters(String content) {
         var action = Objects.requireNonNull(actionsStack.peek());
         switch (action) {
-          case Action.EnumAction.EMIT -> delegate.characters(ch, start, length);
+          case Action.EnumAction.EMIT -> delegate.characters(content);
           case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
-          case Action.Replace _ -> delegate.characters(ch, start, length);
-          case Action.Collect(_, Node node, _) -> node.appendText(new String(ch, start, length));
+          case Action.Replace _ -> delegate.characters(content);
+          case Action.Collect(_, Node node, _) -> node.appendText(content);
         }
-      }
-
-      @Override
-      public void startDocument() throws SAXException {
-        delegate.startDocument();
-      }
-
-      @Override
-      public void endDocument() throws SAXException {
-        delegate.endDocument();
       }
     };
   }
 
   private static void include(FilterHandler filter, Reader reader) {
-    var parserFactory = SAXParserFactory.newInstance();
-    parserFactory.setNamespaceAware(true);
+    org.jsoup.nodes.Document document;
     try {
-      var parser = parserFactory.newSAXParser();
-      parser.parse(new InputSource(reader), new DefaultHandler() {
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-          filter.startElement(uri, localName, qName, attributes);
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-          filter.endElement(uri, localName, qName);
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length) throws SAXException {
-          filter.characters(ch, start, length);
-        }
-      });
-    } catch (ParserConfigurationException e) {
-      throw new IllegalStateException(e);
-    } catch (SAXException e) {
-      throw new UncheckedSAXException(e);
+      document = parseXML(reader);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+    Node.visit(document, new ContentHandler() {
+      @Override
+      public void declaration(String version, String encoding) {}
+      @Override
+      public void startDocument() {}
+      @Override
+      public void endDocument() {}
+
+      @Override
+      public void startElement(String name, Map<String, String> attrs) {
+        filter.startElement(name, attrs);
+      }
+
+      @Override
+      public void endElement(String name) {
+        filter.endElement(name);
+      }
+
+      @Override
+      public void characters(String content) {
+        filter.characters(content);
+      }
+    });
   }
 
   public enum OutputKind {
@@ -288,12 +242,8 @@ public class XML {
 
   private static org.jsoup.nodes.Document rewrite(org.jsoup.nodes.Document document, ComponentStyle style) throws IOException {
     var result = new org.jsoup.nodes.Document("");
-    try {
-      var filter = filter(Node.asContentHandler(result), style);
-      Node.visit(document, filter);
-    } catch (SAXException e) {
-      throw new IOException(e);
-    }
+    var filter = filter(Node.asContentHandler(result), style);
+    Node.visit(document, filter);
     return result;
   }
 
