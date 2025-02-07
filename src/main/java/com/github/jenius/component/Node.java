@@ -1,19 +1,15 @@
 package com.github.jenius.component;
 
+import org.jsoup.nodes.XmlDeclaration;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,31 +19,25 @@ import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public final class Node {
-  private final org.w3c.dom.Node domNode;
+  final org.jsoup.nodes.Node jsoupNode;
 
-  Node(org.w3c.dom.Node domNode) {
-    this.domNode = domNode;
+  Node(org.jsoup.nodes.Node jsoupNode) {
+    this.jsoupNode = jsoupNode;
   }
 
   public static Node createDocument() {
-    var factory = DocumentBuilderFactory.newInstance();
-    DocumentBuilder builder;
-    try {
-      builder = factory.newDocumentBuilder();
-    } catch (ParserConfigurationException e) {
-      throw new UncheckedIOException(new IOException(e));
-    }
-    var document = builder.newDocument();
+    var document = new org.jsoup.nodes.Document("");
     return new Node(document);
   }
 
-  private org.w3c.dom.Document getDomDocument() {
-    if (domNode instanceof org.w3c.dom.Document document) {
+  private org.jsoup.nodes.Document getJSoupDocument() {
+    if (jsoupNode instanceof org.jsoup.nodes.Document document) {
       return document;
     }
-    return domNode.getOwnerDocument();
+    return jsoupNode.ownerDocument();
   }
 
   public Node createNode(String name) {
@@ -66,124 +56,154 @@ public final class Node {
     Objects.requireNonNull(name);
     Objects.requireNonNull(attributes);
     Objects.requireNonNull(childNodes);
-    var document = getDomDocument();
-    var element = document.createElement(name);
-    attributes.forEach(element::setAttribute);
-    List.copyOf(childNodes).forEach(n -> element.appendChild(n.domNode));
+    var document = getJSoupDocument();
+    var element = document.appendElement(name);
+    attributes.forEach(element::attr);
+    List.copyOf(childNodes).forEach(n -> element.appendChild(n.jsoupNode));
     return new Node(element);
   }
 
   public void appendChild(Node node) {
     Objects.requireNonNull(node);
-    domNode.appendChild(node.domNode);
+    ((org.jsoup.nodes.Element) jsoupNode).appendChild(node.jsoupNode);
   }
 
   public void appendText(String content) {
     Objects.requireNonNull(content);
-    var document = getDomDocument();
-    var text = document.createTextNode(content);
-    domNode.appendChild(text);
+    ((org.jsoup.nodes.Element) jsoupNode).appendText(content);
   }
 
   public Optional<Node> getFirstElement() {
-    var nodeList = domNode.getChildNodes();
-    return IntStream.range(0, nodeList.getLength())
-        .mapToObj(nodeList::item)
-        .filter(domNode -> domNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE)
+    return jsoupNode.childNodes().stream()
+        .filter(n -> n instanceof org.jsoup.nodes.Element)
         .map(Node::new)
         .findFirst();
   }
 
-  private static void toDebugString(org.w3c.dom.Node domNode, StringBuilder builder, String indent) {
-    var nodeValue = domNode.getNodeValue();
-    builder.append(indent).append("Node: ")
-        .append(domNode.getNodeName()).append(" [Type: ").append(domNode.getNodeType())
-        .append(nodeValue != null ? ", Value: " + nodeValue : "").append("]\n");
-    var attributes = domNode.getAttributes();
-    if (attributes != null) {
-      for (int i = 0; i < attributes.getLength(); i++) {
-        var attribute = attributes.item(i);
-        builder.append(indent).append("  Attribute: ")
-            .append(attribute.getNodeName()).append(" = ").append(attribute.getNodeValue()).append('\n');
-      }
+  private static void toDebugString(org.jsoup.nodes.Node jsoupNode, StringBuilder builder, String indent) {
+    builder.append(indent).append("Node: ").append(jsoupNode.nodeName())
+        .append(" [Type: ").append(jsoupNode.getClass().getSimpleName()).append("]");
+    for(var attr : jsoupNode.attributes()) {
+      builder.append(indent).append("  Attribute: ")
+          .append(attr.getKey()).append(" = ").append(attr.getValue()).append('\n');
     }
-    var children = domNode.getChildNodes();
-    for (int i = 0; i < children.getLength(); i++) {
-      toDebugString(children.item(i), builder, indent + "  ");
+    for (var child : jsoupNode.childNodes()) {
+      toDebugString(child, builder, indent + "  ");
     }
   }
 
   @Override
   public String toString() {
     var builder = new StringBuilder();
-    toDebugString(domNode, builder, "  ");
+    toDebugString(jsoupNode, builder, "  ");
     return builder.toString();
   }
 
   public String name() {
-    return domNode.getNodeName();
+    return jsoupNode.nodeName();
   }
 
   public String text() {
-    org.w3c.dom.Node firstChild = domNode.getFirstChild();
-    String text;
-    return firstChild == null ? "" : ((text = firstChild.getTextContent()) == null) ? "" : text;
+    return jsoupNode instanceof org.jsoup.nodes.Element element ? element.text() : "";
   }
 
-  private static void visit(org.w3c.dom.Node domNode, ContentHandler handler) throws SAXException {
-    var nodeType = domNode.getNodeType();
-    if (nodeType == org.w3c.dom.Node.TEXT_NODE) {
-      var text = domNode.getTextContent();
-      handler.characters(text.toCharArray(), 0, text.length());
-      return;
-    }
-    var name = domNode.getNodeName();
-    switch (nodeType) {
-      case org.w3c.dom.Node.DOCUMENT_NODE ->
-          handler.startDocument();
-      case org.w3c.dom.Node.ELEMENT_NODE ->
-          handler.startElement("", name, name, AttributesUtil.asAttributes(domNode.getAttributes()));
+  static void visit(org.jsoup.nodes.Node jsoupNode, ContentHandler handler) throws SAXException {
+    switch (jsoupNode) {
+      case org.jsoup.nodes.XmlDeclaration _ -> {
+          handler.declaration(jsoupNode.attr("version"), jsoupNode.attr("encoding"), "");
+          return;
+      }
+      case org.jsoup.nodes.DocumentType _ -> { return; }  // ignore
+      case org.jsoup.nodes.TextNode textNode -> {
+        if (textNode.parent() instanceof org.jsoup.nodes.Document) {
+          return;
+        }
+        var text = textNode.getWholeText();
+        handler.characters(text.toCharArray(), 0, text.length());
+        return;
+      }
+      case org.jsoup.nodes.Document _ -> handler.startDocument();
+      case org.jsoup.nodes.Element element -> {
+        var name = element.nodeName();
+        handler.startElement("", name, name, AttributesUtil.asAttributes(jsoupNode.attributes()));
+      }
       default -> {}
     }
-    var domList = domNode.getChildNodes();
-    for(var i = 0; i < domList.getLength(); i++) {
-      visit(domList.item(i), handler);
+    for(var i = 0; i < jsoupNode.childNodeSize(); i++) {
+      visit(jsoupNode.childNode(i), handler);
     }
-    switch (nodeType) {
-      case org.w3c.dom.Node.DOCUMENT_NODE ->
-          handler.endDocument();
-      case org.w3c.dom.Node.ELEMENT_NODE ->
-          handler.endElement("", name, name);
+    switch (jsoupNode) {
+      case org.jsoup.nodes.Document _ -> handler.endDocument();
+      case org.jsoup.nodes.Element element -> {
+        var name = element.nodeName();
+        handler.endElement("", name, name);
+      }
       default -> {}
     }
   }
 
   void visit(ContentHandler handler) throws SAXException {
-    visit(domNode, handler);
+    visit(jsoupNode, handler);
+  }
+
+  static ContentHandler asContentHandler(org.jsoup.nodes.Document document) {
+    var stack = new ArrayDeque<org.jsoup.nodes.Element>();
+    stack.push(document);
+    return new DefaultHandler() {
+      @Override
+      public void declaration(String version, String encoding, String standalone) {
+        var declaration = new XmlDeclaration("xml", false)
+            .attr("version", version)
+            .attr("encoding", encoding);
+        document.appendChild(declaration);
+      }
+
+      @Override
+      public void startElement(String uri, String localName, String qName, Attributes atts) {
+        var element = document.createElement(localName);
+        for(var i = 0; i < atts.getLength(); i++) {
+          element.attr(atts.getLocalName(i), atts.getValue(i));
+        }
+        var parent = Objects.requireNonNull(stack.peek());
+        parent.appendChild(element);
+        stack.push(element);
+      }
+
+      @Override
+      public void endElement(String uri, String localName, String qName) {
+        assert stack.peek() != null && stack.peek().nodeName().equals(localName);
+        stack.pop();
+      }
+
+      @Override
+      public void characters(char[] ch, int start, int length) {
+        var element = Objects.requireNonNull(stack.peek());
+        element.appendText(new String(ch, start, length));
+      }
+    };
   }
 
   public Map<String, String> attributes() {
-    var domMap = domNode.getAttributes();
+    var attributes = jsoupNode.attributes();
+    var size = attributes.asList().size();  // jsoup bug: need to use asList().size()
+                                                // because size() count internal attributes too
     return new AbstractMap<>() {
       @Override
       public Set<Entry<String, String>> entrySet() {
         return new AbstractSet<>() {
           @Override
           public int size() {
-            return domMap == null ? 0 : domMap.getLength();
+            return size;
           }
 
           @Override
           public Iterator<Entry<String, String>> iterator() {
-            if (domMap == null) {
-              return Collections.emptyIterator();
-            }
+            var it = attributes.iterator();
             return new Iterator<>() {
-              private int index;
 
               @Override
               public boolean hasNext() {
-                return index < size();
+                return it.hasNext();
               }
 
               @Override
@@ -191,8 +211,8 @@ public final class Node {
                 if (!hasNext()) {
                   throw new NoSuchElementException();
                 }
-                var item = domMap.item(index++);
-                return Map.entry(item.getNodeName(), item.getNodeValue());
+                var attr = it.next();
+                return Map.entry(attr.getKey(), attr.getValue());
               }
             };
           }
@@ -215,53 +235,49 @@ public final class Node {
         if (!(key instanceof String name)) {
           return defaultValue;
         }
-        var item =  domMap.getNamedItem(name);
-        return item.getNodeValue();
+        if (!attributes.hasKey(name)) {  // let's hope indexOf will be inlined
+          return defaultValue;
+        }
+        return attributes.get(name);
       }
     };
   }
 
   public List<Node> elements() {
-    var nodeList = domNode.getChildNodes();
-    return IntStream.range(0, nodeList.getLength())
-        .mapToObj(nodeList::item)
-        .filter(domNode -> domNode.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE)
+    return IntStream.range(0, jsoupNode.childNodeSize())
+        .mapToObj(jsoupNode::childNode)
+        .filter(n -> n instanceof org.jsoup.nodes.Element)
         .map(Node::new)
         .toList();
   }
 
   public List<Node> childNodes() {
-    var nodeList = domNode.getChildNodes();
     class NodeList extends AbstractList<Node> implements RandomAccess {
       @Override
       public int size() {
-        return nodeList.getLength();
+        return jsoupNode.childNodeSize();
       }
 
       @Override
       public Node get(int index) {
         Objects.checkIndex(index, size());
-        return new Node(nodeList.item(index));
+        return new Node(jsoupNode.childNode(index));
       }
     }
     return new NodeList();
   }
 
-  private static org.w3c.dom.Node element(org.w3c.dom.Node domNode, String name) {
+  private static org.jsoup.nodes.Element element(org.jsoup.nodes.Node jsoupNode, String name) {
     Objects.requireNonNull(name);
-    var nodeList = domNode.getChildNodes();
-    for(var i = 0; i < nodeList.getLength(); i++) {
-      var item = nodeList.item(i);
-      if (item.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE && name.equals(item.getNodeName())) {
-        return item;
-      }
-    }
-    throw new IllegalStateException("no element named " + name + " found");
+    return jsoupNode.childNodes().stream()
+        .flatMap(n -> n instanceof org.jsoup.nodes.Element element ? Stream.of(element) : null)
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("no element named " + name + " found"));
   }
 
   public Node path(String... names) {
     Objects.requireNonNull(names);
-    var domNode = this.domNode;
+    var domNode = this.jsoupNode;
     for(var name : names) {
       domNode = element(domNode, name);
     }
@@ -270,16 +286,15 @@ public final class Node {
 
   public Optional<Node> find(String name) {
     Objects.requireNonNull(name);
-    var stack = new ArrayDeque<org.w3c.dom.Node>();
-    stack.offer(domNode);
-    org.w3c.dom.Node current;
+    var stack = new ArrayDeque<org.jsoup.nodes.Node>();
+    stack.offer(jsoupNode);
+    org.jsoup.nodes.Node current;
     while((current = stack.poll()) != null) {
-      if (current.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE && name.equals(current.getNodeName())) {
+      if (name.equals(current.nodeName())) {
         return Optional.of(new Node(current));
       }
-      var nodeList = current.getChildNodes();
-      for(var i = 0; i < nodeList.getLength(); i++) {
-        var item = nodeList.item(i);
+      for(var i = 0; i < current.childNodeSize(); i++) {
+        var item = current.childNode(i);
         stack.push(item);
       }
     }
@@ -287,10 +302,10 @@ public final class Node {
   }
 
   public void removeFromParent() {
-    org.w3c.dom.Node parent = domNode.getParentNode();
+    var parent = jsoupNode.parent();
     if (parent == null) {
       throw new IllegalStateException("no parent");
     }
-    parent.removeChild(domNode);
+    jsoupNode.remove();
   }
 }

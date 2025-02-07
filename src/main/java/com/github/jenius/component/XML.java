@@ -5,35 +5,21 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.jsoup.parser.Parser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.DTDHandler;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
-import org.xml.sax.helpers.XMLFilterImpl;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.stream.StreamResult;
 
 public class XML {
   private static final class UncheckedSAXException extends RuntimeException {
@@ -44,22 +30,55 @@ public class XML {
     }
   }
 
-  private static abstract class SaxNodeAdapter implements NodeBuilder {
-    private final XMLFilterImpl impl;
+  private static abstract class FilterHandler implements ContentHandler {
+    private final ContentHandler delegate;
+
+    private FilterHandler(ContentHandler delegate) {
+      this.delegate = Objects.requireNonNull(delegate);
+    }
+
+    @Override
+    public final void setDocumentLocator(Locator locator) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public final void startPrefixMapping(String prefix, String uri) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public final void endPrefixMapping(String prefix) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public final void ignorableWhitespace(char[] ch, int start, int length) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public void processingInstruction(String target, String data) {
+      throw new UnsupportedOperationException();
+    }
+    @Override
+    public void skippedEntity(String name) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  private static abstract class AbstractNodeBuilder implements NodeBuilder {
+    private final FilterHandler filter;
     private final ArrayDeque<Action> actionStack;
 
-    private SaxNodeAdapter(XMLFilterImpl impl, ArrayDeque<Action> actionStack) {
-      this.impl = impl;
+    private AbstractNodeBuilder(FilterHandler filter, ArrayDeque<Action> actionStack) {
+      this.filter = filter;
       this.actionStack = actionStack;
     }
 
     private NodeBuilder delegatingNodeBuilder() {
-      return new SaxNodeAdapter(impl, actionStack) {
+      return new AbstractNodeBuilder(filter, actionStack) {
         @Override
         public NodeBuilder saxNode(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) throws SAXException {
-          impl.startElement("", name, name, AttributesUtil.asAttributes(map));
+          filter.startElement("", name, name, AttributesUtil.asAttributes(map));
           children.accept(this);
-          impl.endElement("", name, name);
+          filter.endElement("", name, name);
           return this;
         }
       };
@@ -80,9 +99,8 @@ public class XML {
     @Override
     public final NodeBuilder text(String text) {
       Objects.requireNonNull(text);
-      var contentHandler = impl.getContentHandler();
       try {
-        contentHandler.characters(text.toCharArray(), 0, text.length());
+        filter.delegate.characters(text.toCharArray(), 0, text.length());
       } catch (SAXException e) {
         throw new UncheckedSAXException(e);
       }
@@ -92,7 +110,7 @@ public class XML {
     @Override
     public final NodeBuilder include(Reader reader) {
       Objects.requireNonNull(reader);
-      XML.include(impl, reader);
+      XML.include(filter, reader);
       return this;
     }
 
@@ -100,7 +118,7 @@ public class XML {
     public final NodeBuilder include(Node node) {
       Objects.requireNonNull(node);
       try {
-        node.visit(impl);
+        node.visit(filter);
       } catch (SAXException e) {
         throw new UncheckedSAXException(e);
       }
@@ -140,11 +158,11 @@ public class XML {
     record Collect(Node document, Node node, Consumer<Node> consumer) implements Action {}
   }
 
-  private static XMLFilterImpl filter(XMLReader xmlReader, ComponentStyle style) {
+  private static ContentHandler filter(ContentHandler delegate, ComponentStyle style) {
     var actionsStack = new ArrayDeque<Action>();
-    return new XMLFilterImpl(xmlReader) {
+    return new FilterHandler(delegate) {
       private NodeBuilder rewritingNodeBuilder() {
-        return new SaxNodeAdapter(this, actionsStack) {
+        return new AbstractNodeBuilder(this, actionsStack) {
           private boolean calledOnce;
 
           @Override
@@ -153,8 +171,7 @@ public class XML {
               throw new IllegalStateException("this builder has already called once " + name + " " + map);
             }
             calledOnce = true;
-            var contentHandler = getContentHandler();
-            contentHandler.startElement("", name, name, AttributesUtil.asAttributes(map));
+            delegate.startElement("", name, name, AttributesUtil.asAttributes(map));
             var _ = (Action.Ignore) actionsStack.pop();
             actionsStack.push(new Action.Replace(name));
             children.accept(super.delegatingNodeBuilder());
@@ -191,7 +208,7 @@ public class XML {
           }
         } else {
           actionsStack.push(Action.EnumAction.EMIT);
-          super.startElement(uri, localName, qName, attrs);
+          delegate.startElement(uri, localName, qName, attrs);
         }
       }
 
@@ -199,10 +216,10 @@ public class XML {
       public void endElement(String uri, String localName, String qName) throws SAXException {
         var action = actionsStack.pop();
         switch (action) {
-          case Action.EnumAction.EMIT -> super.endElement(uri, localName, qName);
+          case Action.EnumAction.EMIT -> delegate.endElement(uri, localName, qName);
           case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
-          case Action.Replace(String newName) -> super.endElement("", newName, newName);
+          case Action.Replace(String newName) -> delegate.endElement("", newName, newName);
           case Action.Collect(_, Node node, Consumer<Node> consumer) -> {
             if (consumer != null) {
               consumer.accept(node);
@@ -215,22 +232,27 @@ public class XML {
       public void characters(char[] ch, int start, int length) throws SAXException {
         var action = Objects.requireNonNull(actionsStack.peek());
         switch (action) {
-          case Action.EnumAction.EMIT -> super.characters(ch, start, length);
+          case Action.EnumAction.EMIT -> delegate.characters(ch, start, length);
           case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
-          case Action.Replace _ -> super.characters(ch, start, length);
+          case Action.Replace _ -> delegate.characters(ch, start, length);
           case Action.Collect(_, Node node, _) -> node.appendText(new String(ch, start, length));
         }
       }
 
       @Override
-      public void ignorableWhitespace(char[] ch, int start, int length) {
-        // just ignore them
+      public void startDocument() throws SAXException {
+        delegate.startDocument();
+      }
+
+      @Override
+      public void endDocument() throws SAXException {
+        delegate.endDocument();
       }
     };
   }
 
-  private static void include(XMLFilterImpl filter, Reader reader) {
+  private static void include(FilterHandler filter, Reader reader) {
     var parserFactory = SAXParserFactory.newInstance();
     parserFactory.setNamespaceAware(true);
     try {
@@ -260,117 +282,25 @@ public class XML {
     }
   }
 
-  private static XMLReader createXMLReader() throws IOException {
-    var parserFactory = SAXParserFactory.newInstance();
-    parserFactory.setNamespaceAware(true);
+  public enum OutputKind {
+    HTML, XML
+  }
+
+  private static org.jsoup.nodes.Document rewrite(org.jsoup.nodes.Document document, ComponentStyle style) throws IOException {
+    var result = new org.jsoup.nodes.Document("");
     try {
-      var parser = parserFactory.newSAXParser();
-      return parser.getXMLReader();
-    } catch (ParserConfigurationException e) {
-      throw new IllegalStateException(e);
+      var filter = filter(Node.asContentHandler(result), style);
+      Node.visit(document, filter);
     } catch (SAXException e) {
       throw new IOException(e);
     }
+    return result;
   }
 
-  private static XMLReader createXMLReader(Node node) {
-    return new XMLReader() {
-      private ContentHandler contentHandler;
-      private EntityResolver entityResolver;
-      private DTDHandler dtdHandler;
-      private ErrorHandler errorHandler;
-
-      @Override
-      public void setContentHandler(ContentHandler handler) {
-        this.contentHandler = handler;
-      }
-      @Override
-      public ContentHandler getContentHandler() {
-        return contentHandler;
-      }
-      @Override
-      public void setEntityResolver(EntityResolver resolver) {
-        this.entityResolver = resolver;
-      }
-      @Override
-      public EntityResolver getEntityResolver() {
-        return entityResolver;
-      }
-      @Override
-      public void setDTDHandler(DTDHandler handler) {
-        this.dtdHandler = handler;
-      }
-      @Override
-      public DTDHandler getDTDHandler() {
-        return dtdHandler;
-      }
-      @Override
-      public void setErrorHandler(ErrorHandler handler) {
-        this.errorHandler = handler;
-      }
-      @Override
-      public ErrorHandler getErrorHandler() {
-        return errorHandler;
-      }
-
-      @Override
-      public void parse(InputSource input) throws SAXException {
-        contentHandler.declaration(null, null, null);
-        node.visit(contentHandler);
-      }
-
-      @Override
-      public void parse(String systemId) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public boolean getFeature(String name) {
-        return false;
-      }
-      @Override
-      public void setFeature(String name, boolean value) throws SAXNotRecognizedException {
-         throw new SAXNotRecognizedException();
-      }
-      @Override
-      public Object getProperty(String name) {
-        return null;
-      }
-      @Override
-      public void setProperty(String name, Object value) throws SAXNotRecognizedException {
-        throw new SAXNotRecognizedException();
-      }
-    };
-  }
-
-  public enum OutputKind {
-    HTML, XML;
-
-    private String methodName() {
-      return name().toLowerCase(Locale.ROOT);
-    }
-  }
-
-  private static void transform(XMLReader xmlReader, InputSource inputSource, Result result, OutputKind outputKind) throws IOException {
-    var transformerFactory = SAXTransformerFactory.newInstance();
-    transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-    transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+  private static org.jsoup.nodes.Document parseXML(Reader reader) throws IOException {
+    var parser = Parser.xmlParser();
     try {
-      transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-    } catch(TransformerConfigurationException e) {
-      throw new IOException(e);
-    }
-    try {
-      var transformer = transformerFactory.newTransformer();
-      transformer.setOutputProperty(OutputKeys.METHOD, outputKind.methodName());
-      if (outputKind == OutputKind.HTML) {
-        transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "");
-        xmlReader = HTMLElementValidator.validateHTMLElements(xmlReader);
-      }
-      var source = new SAXSource(xmlReader, inputSource);
-      transformer.transform(source, result);
-    } catch (TransformerException e) {
-      throw new IOException(e);
+      return parser.parseInput(reader, "");
     } catch (UncheckedIOException e) {
       throw e.getCause();
     }
@@ -378,19 +308,13 @@ public class XML {
 
   public static Node transform(Reader reader) throws IOException {
     Objects.requireNonNull(reader);
-    var xmlReader = createXMLReader();
-    var result = new DOMResult();
-    transform(xmlReader, new InputSource(reader), result, OutputKind.XML);
-    return new Node(result.getNode());
+    return new Node(parseXML(reader));
   }
 
   public static Node transform(Reader reader, ComponentStyle style) throws IOException {
     Objects.requireNonNull(reader);
     Objects.requireNonNull(style);
-    var xmlReader = createXMLReader();
-    var result = new DOMResult();
-    transform(filter(xmlReader, style), new InputSource(reader), result, OutputKind.XML);
-    return new Node(result.getNode());
+    return new Node(rewrite(parseXML(reader), style));
   }
 
   public static void transform(Reader reader, Writer writer, OutputKind outputKind, ComponentStyle style) throws IOException {
@@ -398,22 +322,23 @@ public class XML {
     Objects.requireNonNull(writer);
     Objects.requireNonNull(outputKind);
     Objects.requireNonNull(style);
-    var xmlReader = createXMLReader();
-    var result = new StreamResult(writer);
-    transform(filter(xmlReader, style), new InputSource(reader), result, outputKind);
+    var result = rewrite(parseXML(reader), style);
+    result.outputSettings().indentAmount(2);
+    result.outputSettings().syntax(switch (outputKind) {
+      case XML -> org.jsoup.nodes.Document.OutputSettings.Syntax.xml;
+      case HTML -> org.jsoup.nodes.Document.OutputSettings.Syntax.html;
+    });
+    writer.write(result.outerHtml());
   }
 
   public static Node transform(Node document, ComponentStyle style) {
     Objects.requireNonNull(document);
     Objects.requireNonNull(style);
-    var xmlReader = createXMLReader(document);
-    var result = new DOMResult();
     try {
-      transform(filter(xmlReader, style), null, result, OutputKind.XML);
+      return new Node(rewrite((org.jsoup.nodes.Document) document.jsoupNode, style));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-    return new Node(result.getNode());
   }
 
   public static void transform(Node document, Writer writer, OutputKind outputKind, ComponentStyle style) throws IOException {
@@ -421,8 +346,12 @@ public class XML {
     Objects.requireNonNull(writer);
     Objects.requireNonNull(outputKind);
     Objects.requireNonNull(style);
-    var xmlReader = createXMLReader(document);
-    var result = new StreamResult(writer);
-    transform(filter(xmlReader, style), null, result, outputKind);
+    var result = rewrite((org.jsoup.nodes.Document) document.jsoupNode, style);
+    result.outputSettings().indentAmount(2);
+    result.outputSettings().syntax(switch (outputKind) {
+      case XML -> org.jsoup.nodes.Document.OutputSettings.Syntax.xml;
+      case HTML -> org.jsoup.nodes.Document.OutputSettings.Syntax.html;
+    });
+    writer.write(result.outerHtml());
   }
 }

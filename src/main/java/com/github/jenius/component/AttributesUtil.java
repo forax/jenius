@@ -112,4 +112,14 @@ final class AttributesUtil {
     }
     return attributes;
   }
+
+  public static Attributes asAttributes(org.jsoup.nodes.Attributes attrs) {
+    var attributes = new AttributesImpl();
+    for (var attr : attrs) {
+      var key = attr.getKey();
+      var value = attr.getValue();
+      attributes.addAttribute("", key, key, "CDATA", value);
+    }
+    return attributes;
+  }
 }
