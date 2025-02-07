@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 class CompactMap<K, V> extends AbstractMap<K, V> {
   private final LinkedHashMap<K, V> map;
@@ -79,9 +81,17 @@ class CompactMap<K, V> extends AbstractMap<K, V> {
 
   @SuppressWarnings("unchecked")
   public static <K, V> CompactMap<K, V> copyOf(Map<? extends K, ? extends V> map) {
+    Objects.requireNonNull(map);
     if (map instanceof CompactMap<? extends K,? extends V> compactMap) {
       return (CompactMap<K, V>) compactMap;
     }
+    return new CompactMap<>(map);
+  }
+
+  public static <K, V> CompactMap<K, V> from(Consumer<BiConsumer<K, V>> consumer) {
+    Objects.requireNonNull(consumer);
+    var map = new LinkedHashMap<K, V>();
+    consumer.accept(map::put);
     return new CompactMap<>(map);
   }
 
