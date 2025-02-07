@@ -1,5 +1,7 @@
 package com.github.jenius.component;
 
+import org.jsoup.nodes.Attributes;
+
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -16,6 +18,70 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public final class Node {
+  private static final class AttributeMap extends AbstractMap<String, String> {
+    private final org.jsoup.nodes.Attributes attributes;
+    private final int size;
+
+    private AttributeMap(Attributes attributes) {
+      this.attributes = attributes;
+      // jsoup bug: need to use asList().size() because size() count internal attributes too;
+      this.size = attributes.isEmpty() ? 0 : attributes.asList().size();
+    }
+
+    @Override
+    public Set<Entry<String, String>> entrySet() {
+      return new AbstractSet<>() {
+        @Override
+        public int size() {
+          return size;
+        }
+
+        @Override
+        public Iterator<Entry<String, String>> iterator() {
+          var it = attributes.iterator();
+          return new Iterator<>() {
+
+            @Override
+            public boolean hasNext() {
+              return it.hasNext();
+            }
+
+            @Override
+            public Entry<String, String> next() {
+              if (!hasNext()) {
+                throw new NoSuchElementException();
+              }
+              var attr = it.next();
+              return Map.entry(attr.getKey(), attr.getValue());
+            }
+          };
+        }
+      };
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+      return getOrDefault(key, null) != null;
+    }
+
+    @Override
+    public String get(Object key) {
+      return getOrDefault(key, null);
+    }
+
+    @Override
+    public String getOrDefault(Object key, String defaultValue) {
+      Objects.requireNonNull(key);
+      if (!(key instanceof String name)) {
+        return defaultValue;
+      }
+      if (!attributes.hasKey(name)) {  // let's hope indexOf will be inlined
+        return defaultValue;
+      }
+      return attributes.get(name);
+    }
+  }
+
   final org.jsoup.nodes.Node jsoupNode;
 
   Node(org.jsoup.nodes.Node jsoupNode) {
@@ -119,11 +185,7 @@ public final class Node {
       case org.jsoup.nodes.Document _ -> handler.startDocument();
       case org.jsoup.nodes.Element element -> {
         var name = element.nodeName();
-        handler.startElement(name, CompactMap.from(c -> {
-          for(var attribute : jsoupNode.attributes()) {
-            c.accept(attribute.getKey(), attribute.getValue());
-          }
-        }));
+        handler.startElement(name, new AttributeMap(element.attributes()));
       }
       default -> {}
     }
@@ -159,8 +221,12 @@ public final class Node {
       @Override
       public void startElement(String name, Map<String,String> attrs) {
         var element = document.createElement(name);
-        for(var entry : attrs.entrySet()) {
-          element.attr(entry.getKey(), entry.getValue());
+        if (attrs instanceof AttributeMap attributeMap) {
+          element.attributes().addAll(attributeMap.attributes);
+        } else {
+          for (var entry : attrs.entrySet()) {
+            element.attr(entry.getKey(), entry.getValue());
+          }
         }
         var parent = Objects.requireNonNull(stack.peek());
         parent.appendChild(element);
@@ -188,62 +254,7 @@ public final class Node {
 
   public Map<String, String> attributes() {
     var attributes = jsoupNode.attributes();
-    var size = attributes.asList().size();  // jsoup bug: need to use asList().size()
-                                                // because size() count internal attributes too
-    return new AbstractMap<>() {
-      @Override
-      public Set<Entry<String, String>> entrySet() {
-        return new AbstractSet<>() {
-          @Override
-          public int size() {
-            return size;
-          }
-
-          @Override
-          public Iterator<Entry<String, String>> iterator() {
-            var it = attributes.iterator();
-            return new Iterator<>() {
-
-              @Override
-              public boolean hasNext() {
-                return it.hasNext();
-              }
-
-              @Override
-              public Entry<String, String> next() {
-                if (!hasNext()) {
-                  throw new NoSuchElementException();
-                }
-                var attr = it.next();
-                return Map.entry(attr.getKey(), attr.getValue());
-              }
-            };
-          }
-        };
-      }
-
-      @Override
-      public boolean containsKey(Object key) {
-        return getOrDefault(key, null) != null;
-      }
-
-      @Override
-      public String get(Object key) {
-        return getOrDefault(key, null);
-      }
-
-      @Override
-      public String getOrDefault(Object key, String defaultValue) {
-        Objects.requireNonNull(key);
-        if (!(key instanceof String name)) {
-          return defaultValue;
-        }
-        if (!attributes.hasKey(name)) {  // let's hope indexOf will be inlined
-          return defaultValue;
-        }
-        return attributes.get(name);
-      }
-    };
+    return new AttributeMap(attributes);
   }
 
   public List<Node> elements() {

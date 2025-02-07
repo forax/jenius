@@ -30,6 +30,8 @@ public class XML {
     }
   }
 
+
+
   private static abstract class AbstractNodeBuilder implements NodeBuilder {
     private final FilterHandler filter;
     private final ArrayDeque<Action> actionStack;
