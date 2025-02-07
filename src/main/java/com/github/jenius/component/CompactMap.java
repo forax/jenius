@@ -17,14 +17,6 @@ class CompactMap<K, V> extends AbstractMap<K, V> {
     this.map = map;
   }
 
-  public CompactMap(Map<? extends K, ? extends V> map) {
-    this(new LinkedHashMap<>(map));
-    map.forEach((key, value) -> {
-      Objects.requireNonNull(key);
-      Objects.requireNonNull(value);
-    });
-  }
-
   public static <K, V> CompactMap<K, V> of() {
     return new CompactMap<>(new LinkedHashMap<>());
   }
@@ -76,22 +68,6 @@ class CompactMap<K, V> extends AbstractMap<K, V> {
     map.put(key2, value2);
     map.put(key3, value3);
     map.put(key4, value4);
-    return new CompactMap<>(map);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <K, V> CompactMap<K, V> copyOf(Map<? extends K, ? extends V> map) {
-    Objects.requireNonNull(map);
-    if (map instanceof CompactMap<? extends K,? extends V> compactMap) {
-      return (CompactMap<K, V>) compactMap;
-    }
-    return new CompactMap<>(map);
-  }
-
-  public static <K, V> CompactMap<K, V> from(Consumer<BiConsumer<K, V>> consumer) {
-    Objects.requireNonNull(consumer);
-    var map = new LinkedHashMap<K, V>();
-    consumer.accept(map::put);
     return new CompactMap<>(map);
   }
 
