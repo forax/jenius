@@ -1,11 +1,7 @@
 package com.github.jenius.component;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLFilterImpl;
-
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 final class HTMLElementValidator {
@@ -62,22 +58,42 @@ final class HTMLElementValidator {
     return !HTML_ELEMENTS.contains(elementName.toLowerCase(Locale.ROOT));
   }
 
-  public static XMLReader validateHTMLElements(XMLReader reader) {
-    return new XMLFilterImpl(reader) {
+  public static XML.ContentHandler validateHTMLElements(XML.ContentHandler delegate) {
+    return new XML.ContentHandler() {
       @Override
-      public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
-        if (isInvalidHTMLElement(localName)) {
-          throw new IllegalStateException("invalid HTML element " + localName);
-        }
-        super.startElement(uri, localName, qName, atts);
+      public void declaration(String version, String encoding) {
+        delegate.declaration(version, encoding);
       }
 
       @Override
-      public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (isInvalidHTMLElement(localName)) {
-          throw new IllegalStateException("invalid HTML element " + localName);
+      public void startDocument() {
+        delegate.startDocument();
+      }
+
+      @Override
+      public void endDocument() {
+        delegate.endDocument();
+      }
+
+      @Override
+      public void startElement(String name, Map<String, String> attrs) {
+        if (isInvalidHTMLElement(name)) {
+          throw new IllegalStateException("invalid HTML element " + name);
         }
-        super.endElement(uri, localName, qName);
+        delegate.startElement(name, attrs);
+      }
+
+      @Override
+      public void endElement(String name) {
+        if (isInvalidHTMLElement(name)) {
+          throw new IllegalStateException("invalid HTML element " + name);
+        }
+        delegate.endElement(name);
+      }
+
+      @Override
+      public void characters(String content) {
+        delegate.characters(content);
       }
     };
   }

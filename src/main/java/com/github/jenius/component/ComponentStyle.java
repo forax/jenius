@@ -64,7 +64,9 @@ public interface ComponentStyle {
     }
     var map = new HashMap<String, String>();
     for(var i = 0; i < pairs.length; i += 2) {
-      map.put(pairs[i], pairs[i + 1]);
+      var oldName = Objects.requireNonNull(pairs[i]);
+      var newName = Objects.requireNonNull(pairs[i + 1]);
+      map.put(oldName, newName);
     }
     return name -> Optional.ofNullable(map.get(name))
           .map(newName -> (_, attrs, b) -> b.node(newName, attrs));
