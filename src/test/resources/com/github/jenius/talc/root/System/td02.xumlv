@@ -1,0 +1,78 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<!DOCTYPE td PUBLIC "-//University of Marne-la-Vallee//DTD tipi//EN"
+ "http://igm.univ-mlv.fr/ens/resources/tipi.dtd">
+<td answer="false">
+<title>Un "ls" presque complet</title>
+
+<exercise title="Sur les traces de Richard Stallman ...">
+  <list>
+    <item>
+      Faire la question bonus du TD 1, en utilisant la fonction
+      <tt>getopt()</tt> (voir exemple suivant).
+     <br/>
+        <srcref name="src/getopt.c"/>
+    </item>
+    <item>
+      Reprendre le premier programme du TD 1, et modifier la fonction
+      d'affichage afin qu'elle soit paramétrable. En fonction des paramètres,
+      elle devra fonctionner comme "<tt>ls</tt>", "<tt>ls -l</tt>", ou "<tt>ls
+        -ln</tt>". Indications: pour convertir les UID et GID en noms, utiliser
+      <tt>getpwuid()</tt> et <tt>getgrgid()</tt>; pour convertir la date, 
+   utiliser <tt>ctime()</tt> ou une fonction similaire. <bold>Attention:</bold>
+   attachez un soin tout particulier à écrire un code propre et compact pour
+   afficher le type de fichier et les droits d'accès au fichier.
+    </item>
+   
+    <item>
+      Combiner les programmes des deux questions précédentes afin d'obtenir un
+      "<tt>ls</tt>" comprenant les options <tt>-R -n -l</tt> (utilisez toujours
+      <tt>getopt()</tt> pour l'analyse de la ligne de commande).  Pour
+      l'instant, il n'est pas nécessaire de trier les répertoires ni d'afficher
+      leur taille totale, comme le fait le "vrai" <tt>ls</tt>. Il n'est pas
+      nécessaire non plus de gérer la récursivité comme <tt>ls</tt>, qui liste
+      le contenu du répertoire puis descend dans les sous-répertoire. Vous
+      pouvez descendre dans les répertoires au fur et à mesure que vous les
+      rencontrez.
+    </item>
+
+    <item>
+      Modifier le programme pour qu'il utilise <tt>scandir()</tt> à la place
+      d'<tt>opendir()</tt>/<tt>readdir()</tt>.
+    </item>
+   
+    <item>
+      Trier les répertoires par ordre alphabétique (comme <tt>ls</tt>); indice:
+      il y a un paramètre <tt>compar</tt> dans <tt>scandir()</tt> qui permet de
+      le faire très, très facilement.
+    </item>
+
+    <item>
+      Écrire une fonction <tt>isDirectory(struct dirent*)</tt> qui indique si la
+      structure passée est ou non un répertoire.
+    </item>
+
+    <item>
+      Utiliser cette fonction pour que le <tt>ls</tt> que vous avez écrit,
+      lorsqu'il marche en mode récursif, liste d'abord le contenu du répertoire,
+      puis descende dans les sous-répertoires.
+    </item>
+
+    <item>
+      Question bonus: bravo, vous avez un <tt>ls</tt> qui marche. Si vous êtes
+      arrivés jusque-là, implantez aussi les options <tt>-a -d -i -s</tt>. Pour
+      comparer votre <tt>ls</tt> avec le <tt>ls</tt> "normal", utilisez ce
+      dernier sans alias et avec l'option <tt>-1</tt> (moins un), par exemple
+      "<tt>/bin/ls -1 &lt;autres options...&gt;</tt>".
+    </item>
+
+  </list>
+</exercise>
+<answer>
+  <paragraph>
+    CFLAGS=-Wall -ansi -D_XOPEN_SOURCE=500 -D_SVID_SOURCE make ls
+    <srcref name="PRIVATE/td02-ls.h" link="true"/>
+    <srcref name="PRIVATE/td02-ls.c" link="true"/>
+  </paragraph>
+</answer>
+
+</td>

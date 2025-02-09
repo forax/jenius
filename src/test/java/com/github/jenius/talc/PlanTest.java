@@ -6,8 +6,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
+import static java.util.stream.Collectors.toMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PlanTest {
@@ -133,14 +134,22 @@ public class PlanTest {
     var dest = path.resolve("dest");
     var plan = planFactory.diff(root, dest);
 
-    var statusMap = plan.statusMap();
-    assertEquals(Map.of(
-        root.resolve("index.xumlv"), new Status(Status.State.ADDED, dest.resolve("index.html")),
-        root.resolve("template.html"), new Status(Status.State.ADDED, dest.resolve("template.html")),
-        root.resolve("Java"), new Status(Status.State.ADDED, dest.resolve("Java")),
-        root.resolve("Java/index.xumlv"), new Status(Status.State.ADDED, dest.resolve("Java/index.html")),
-        root.resolve("Java/td01.xumlv"), new Status(Status.State.ADDED, dest.resolve("Java/td01.html")),
-        dest.resolve("should_be_removed.txt"), new Status(Status.State.REMOVED, dest.resolve("should_be_removed.txt"))
-    ), statusMap);
+    record StatusPair(Path path, Status status) {}
+    var pairs = List.of(
+        new StatusPair(root.resolve("index.xumlv"), new Status(Status.State.ADDED, dest.resolve("index.html"))),
+        new StatusPair(root.resolve("template.html"), new Status(Status.State.ADDED, dest.resolve("template.html"))),
+        new StatusPair(root.resolve("Java"), new Status(Status.State.ADDED, dest.resolve("Java"))),
+        new StatusPair(root.resolve("Java/index.xumlv"), new Status(Status.State.ADDED, dest.resolve("Java/index.html"))),
+        new StatusPair(root.resolve("Java/td01.xumlv"), new Status(Status.State.ADDED, dest.resolve("Java/td01.html"))),
+        new StatusPair(root.resolve("System"), new Status(Status.State.ADDED, dest.resolve("System"))),
+        new StatusPair(root.resolve("System/index.xumlv"), new Status(Status.State.ADDED, dest.resolve("System/index.html"))),
+        new StatusPair(root.resolve("System/td02.xumlv"), new Status(Status.State.ADDED, dest.resolve("System/td02.html"))),
+        new StatusPair(root.resolve("System/PRIVATE"), new Status(Status.State.ADDED, dest.resolve("System/PRIVATE"))),
+        new StatusPair(root.resolve("System/PRIVATE/td02-ls.h"), new Status(Status.State.ADDED, dest.resolve("System/PRIVATE/td02-ls.h"))),
+        new StatusPair(root.resolve("System/PRIVATE/td02-ls.c"), new Status(Status.State.ADDED, dest.resolve("System/PRIVATE/td02-ls.c"))),
+        new StatusPair(dest.resolve("should_be_removed.txt"), new Status(Status.State.REMOVED, dest.resolve("should_be_removed.txt"))));
+    var expected = pairs.stream().collect(toMap(StatusPair::path, StatusPair::status));
+
+    assertEquals(expected,plan.statusMap());
   }
 }

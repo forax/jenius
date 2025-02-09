@@ -117,4 +117,41 @@ public class GeneratorTest {
         List.of(rootIndex));
     assertEquals(expected, breadcrumb);
   }
+
+  @Test
+  public void generateAllInSystem() throws URISyntaxException, IOException {
+    var template = path("root/template.html");
+    var root = path("root");
+    var dir = root.resolve("System");
+    var dest = root.resolveSibling("target").resolve("System");
+    Files.createDirectories(dest);
+
+    var planFactory = new PlanFactory(mapping());
+    var plan = planFactory.diff(dir, dest);
+    //System.out.println(plan);
+
+    var templateNode = DocumentManager.readPathAsDocument(template);
+    var manager = new DocumentManager(root);
+    var generator = new Generator(manager, mapping(), templateNode);
+
+    for(var entry : plan.statusMap().entrySet()) {
+      var path = entry.getKey();
+      var status = entry.getValue();
+      var state = status.state();
+      var destFile = status.destFile();
+      if (Files.isDirectory(path)) {
+        //System.out.println("create directory " + destFile);
+        Files.createDirectories(destFile);
+        continue;
+      }
+      var pathname = path.getFileName().toString();
+      if (!pathname.endsWith(".xumlv")) {
+        //System.out.println("copy to " + destFile);
+        Files.copy(path, destFile);
+        continue;
+      }
+      //System.out.println("generate " + destFile + " " + state);
+      generator.generate(path, destFile);
+    }
+  }
 }

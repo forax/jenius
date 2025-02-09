@@ -1,0 +1,16 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<!DOCTYPE index PUBLIC "-//University of Marne-la-Vallee//DTD tipi//EN" 
+				"http://igm.univ-mlv.fr/ens/resources/tipi.dtd">
+<index>
+<title>Programmation système en C</title>
+<infos>
+<team>
+<leader name="Sébastien Paumier" mail="paumier[at]univ-mlv.fr" www="http://igm.univ-mlv.fr/~paumier/systeme/"/>
+<member name="Sylvain Cherrier" mail="sylvain.cherrier[at]univ-mlv.fr" www=""/>
+</team>
+</infos>
+
+<list>
+<tdref name="td02.xumlv"/>
+</list>
+</index>
