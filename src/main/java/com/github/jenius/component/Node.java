@@ -1,6 +1,7 @@
 package com.github.jenius.component;
 
 import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Element;
 
 import java.util.AbstractList;
 import java.util.AbstractMap;
@@ -93,13 +94,6 @@ public final class Node {
     return new Node(document);
   }
 
-  private org.jsoup.nodes.Document getJSoupDocument() {
-    if (jsoupNode instanceof org.jsoup.nodes.Document document) {
-      return document;
-    }
-    return jsoupNode.ownerDocument();
-  }
-
   public Node createNode(String name) {
     return createNode(name, Map.of());
   }
@@ -116,8 +110,7 @@ public final class Node {
     Objects.requireNonNull(name);
     Objects.requireNonNull(attributes);
     Objects.requireNonNull(childNodes);
-    var document = getJSoupDocument();
-    var element = document.appendElement(name);
+    var element = new Element(name);
     attributes.forEach(element::attr);
     List.copyOf(childNodes).forEach(n -> element.appendChild(n.jsoupNode));
     return new Node(element);
