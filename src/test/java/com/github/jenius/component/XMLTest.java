@@ -8,7 +8,6 @@ import org.xmlunit.builder.DiffBuilder;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Map;
 
 public class XMLTest {
   private static void assertSameDocument(String expectedText, String actualText) {
@@ -45,6 +44,49 @@ public class XMLTest {
   }
 
   @Test
+  public void replaceNodeWithOneAttribute() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          This is a test
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <bar value="true">
+          This is a test
+        </bar>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "foo", (_, _, b) -> b.node("bar", "value", "true"));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void replaceNodeWithTwoAttributes() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+          This is a test
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <bar one="1" two="2">
+          This is a test
+        </bar>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "foo", (_, _, b) ->
+            b.node("bar", "one", "1", "two", "2"));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
   public void replaceNodeWithChildren() throws IOException {
     var input = """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -65,6 +107,57 @@ public class XMLTest {
     var writer = new StringWriter();
     var style = ComponentStyle.of(
         "section", (_, attrs, b) -> b.node("div", attrs));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void replaceNodeWithChildrenOneAttribute() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <section>
+          <paragraph>
+            This is a test
+          </paragraph>
+        </section>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <div one="1">
+          <paragraph>
+            This is a test
+          </paragraph>
+        </div>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "section", (_, _, b) -> b.node("div", "one", "1"));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
+
+  @Test
+  public void replaceNodeWithChildrenTwoAttributes() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <section>
+          <paragraph>
+            This is a test
+          </paragraph>
+        </section>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <div one="1" two="2">
+          <paragraph>
+            This is a test
+          </paragraph>
+        </div>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "section", (_, _, b) ->
+            b.node("div", "one", "1", "two", "2"));
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
