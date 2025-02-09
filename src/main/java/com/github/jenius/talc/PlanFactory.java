@@ -33,47 +33,6 @@ public final class PlanFactory {
     }
   }
 
-  /*private record SHA1(byte[] hashs) {
-    @Override
-    public boolean equals(Object o) {
-      return o instanceof SHA1 sha1 && Arrays.equals(hashs, sha1.hashs);
-    }
-
-    @Override
-    public int hashCode() {
-      return Arrays.hashCode(hashs);
-    }
-
-    @Override
-    public String toString() {
-      var builder = new StringBuilder();
-      for (var b : hashs) {
-        builder.append(String.format("%02x", b));
-      }
-      return builder.toString();
-    }
-  }
-
-  private static SHA1 computeSHA1(Path path) throws IOException {
-    MessageDigest sha1Digest;
-    try {
-      sha1Digest = MessageDigest.getInstance("SHA-1");
-    } catch (NoSuchAlgorithmException e) {
-      throw new IOException(e);
-    }
-    var buffer = new byte[8192];
-    try (var input = Files.newInputStream(path)) {
-      int read;
-      while ((read = input.read(buffer)) != -1) {
-        sha1Digest.update(buffer, 0, read);
-      }
-    }
-
-    return new SHA1(sha1Digest.digest());
-  }*/
-
-
-
   private void diff(Path dir, Set<String> dirSet, Path dest, Set<String> destSet, Map<Path, Status> statusMap) throws IOException {
     var dirSetMapped = new HashSet<>();
     for(var name : dirSet) {
