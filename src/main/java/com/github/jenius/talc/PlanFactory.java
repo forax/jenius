@@ -33,7 +33,7 @@ public final class PlanFactory {
     }
   }
 
-  private void diff(Path dir, Set<String> dirSet, Path dest, Set<String> destSet, Map<Path, Status> statusMap) throws IOException {
+  private void diff(Path dir, Set<String> dirSet, Path dest, Set<String> destSet, Status.Kind kind, Map<Path, Status> statusMap) throws IOException {
     var dirSetMapped = new HashSet<>();
     for(var name : dirSet) {
       var dirFile = dir.resolve(name);
@@ -44,16 +44,16 @@ public final class PlanFactory {
         var dirFileTime = Files.getLastModifiedTime(dirFile);
         var destFileTime = Files.getLastModifiedTime(destFile);
         if (destFileTime.compareTo(dirFileTime) < 0) {  // use computeSHA1 depending on the kind of file ??
-          statusMap.put(dirFile, new Status(Status.State.UPDATED, destFile));
+          statusMap.put(dirFile, new Status(Status.State.UPDATED, kind, destFile));
         }
       } else {
-        statusMap.put(dirFile, new Status(Status.State.ADDED, destFile));
+        statusMap.put(dirFile, new Status(Status.State.ADDED, kind, destFile));
       }
     }
     for(var destName : destSet) {
       if (!dirSetMapped.contains(destName)) {
         var destPath = dest.resolve(destName);
-        statusMap.put(destPath, new Status(Status.State.REMOVED, destPath));
+        statusMap.put(destPath, new Status(Status.State.REMOVED, kind, destPath));
       }
     }
   }
@@ -62,9 +62,9 @@ public final class PlanFactory {
     var dirScan = scan(dir);
     if (Files.isDirectory(dest)) {
       var destScan = scan(dest);
-      diff(dir, dirScan.names, dest, destScan.names, statusMap);
+      diff(dir, dirScan.names, dest, destScan.names, Status.Kind.PUBLIC, statusMap);
     } else {
-      diff(dir, dirScan.names, dest, Set.of(), statusMap);
+      diff(dir, dirScan.names, dest, Set.of(), Status.Kind.PUBLIC, statusMap);
     }
     for(var directory : dirScan.directories) {
       var newDir = dir.resolve(directory);
