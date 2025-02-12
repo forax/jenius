@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
@@ -119,39 +120,42 @@ public class GeneratorTest {
   }
 
   @Test
-  public void generateAllInSystem() throws URISyntaxException, IOException {
+  public void generateAll() throws URISyntaxException, IOException {
     var template = path("root/template.html");
-    var root = path("root");
-    var dir = root.resolve("System");
-    var dest = root.resolveSibling("target").resolve("System");
+    var dir = path("root");
+    var dest = dir.resolveSibling("target");
+    var privateDest = dir.resolveSibling("target").resolve("private");
     Files.createDirectories(dest);
+    Files.createDirectories(privateDest);
 
     var planFactory = new PlanFactory(mapping());
-    var plan = planFactory.diff(dir, dest);
+    var plan = planFactory.diff(dir, dest, privateDest);
+    plan.remove(template);
     //System.out.println(plan);
 
     var templateNode = DocumentManager.readPathAsDocument(template);
-    var manager = new DocumentManager(root);
+    var manager = new DocumentManager(dir);
     var generator = new Generator(manager, mapping(), templateNode);
 
     for(var entry : plan.statusMap().entrySet()) {
       var path = entry.getKey();
-      var status = entry.getValue();
-      var state = status.state();
-      var destFile = status.destFile();
-      if (Files.isDirectory(path)) {
-        //System.out.println("create directory " + destFile);
-        Files.createDirectories(destFile);
-        continue;
+      for(var status : entry.getValue()) {
+        var state = status.state();
+        var destFile = status.destFile();
+        if (Files.isDirectory(path)) {
+          //System.out.println("create directory " + destFile);
+          Files.createDirectories(destFile);
+          continue;
+        }
+        var pathname = path.getFileName().toString();
+        if (!pathname.endsWith(".xumlv")) {
+          //System.out.println("copy to " + destFile);
+          Files.copy(path, destFile, StandardCopyOption.REPLACE_EXISTING);
+          continue;
+        }
+        //System.out.println("generate " + destFile + " " + state);
+        generator.generate(path, destFile);
       }
-      var pathname = path.getFileName().toString();
-      if (!pathname.endsWith(".xumlv")) {
-        //System.out.println("copy to " + destFile);
-        Files.copy(path, destFile);
-        continue;
-      }
-      //System.out.println("generate " + destFile + " " + state);
-      generator.generate(path, destFile);
     }
   }
 }

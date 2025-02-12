@@ -4,14 +4,13 @@ import com.github.jenius.component.Node;
 import com.github.jenius.component.XML;
 import com.github.jenius.talc.DocumentManager;
 import com.github.jenius.talc.Generator;
+import com.github.jenius.talc.Plan;
 import com.github.jenius.talc.PlanFactory;
-import com.github.jenius.talc.Status;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
-import java.util.SequencedMap;
+import java.nio.file.StandardCopyOption;
 import java.util.function.UnaryOperator;
 
 public class Main {
@@ -28,39 +27,42 @@ public class Main {
     return filename.substring(0, index) + "." + newExtension;
   }
 
-  private static void deleteFiles(SequencedMap<Path, Status> statusMap) throws IOException {
-    for (var status : statusMap.sequencedValues().reversed()) {
-      switch (status.state()) {
-        case UPDATED, ADDED -> {}
-        case REMOVED -> {
-          Files.delete(status.destFile());
+  private static void deleteFiles(Plan plan) throws IOException {
+    for (var entry : plan.statusMap().reversed().entrySet()) {
+      for(var status : entry.getValue()) {
+        switch (status.state()) {
+          case UPDATED, ADDED -> {}
+          case REMOVED -> {
+            Files.delete(status.destFile());
+          }
         }
       }
     }
   }
 
-  private static void generateFiles(Generator generator, SequencedMap<Path, Status> statusMap) throws IOException {
-    for (var entry : statusMap.entrySet()) {
+  private static void generateFiles(Generator generator, Plan plan) throws IOException {
+    for (var entry : plan.statusMap().entrySet()) {
       var path = entry.getKey();
-      var status = entry.getValue();
-      var state = status.state();
-      switch (state) {
-        case REMOVED -> {}
-        case UPDATED, ADDED -> {
-          var destFile = status.destFile();
-          if (Files.isDirectory(path)) {
-            System.out.println("create directory " + destFile);
-            Files.createDirectories(destFile);
-            continue;
+      for (var status : entry.getValue()) {
+        var state = status.state();
+        switch (state) {
+          case REMOVED -> {}
+          case UPDATED, ADDED -> {
+            var destFile = status.destFile();
+            if (Files.isDirectory(path)) {
+              System.out.println("create directory " + destFile);
+              Files.createDirectories(destFile);
+              continue;
+            }
+            var pathname = path.getFileName().toString();
+            if (!pathname.endsWith(".xumlv")) {
+              System.out.println("copy to " + destFile);
+              Files.copy(path, destFile, StandardCopyOption.REPLACE_EXISTING);
+              continue;
+            }
+            System.out.println("generate " + destFile + " " + state);
+            generator.generate(path, destFile);
           }
-          var pathname = path.getFileName().toString();
-          if (!pathname.endsWith(".xumlv")) {
-            System.out.println("copy to " + destFile);
-            Files.copy(path, destFile);
-            continue;
-          }
-          System.out.println("generate " + destFile + " " + state);
-          generator.generate(path, destFile);
         }
       }
     }
@@ -87,21 +89,20 @@ public class Main {
     }
 
     // do a diff between dir and dest
-    var plan = planFactory.diff(dir, dest);
-    var statusMap = new LinkedHashMap<>(plan.statusMap());
-    statusMap.remove(template);  // skip template.html
+    var plan = planFactory.diff(dir, dest, null);
+    plan.remove(template);  // skip template.html
 
-    if (statusMap.isEmpty()) {
+    if (plan.statusMap().isEmpty()) {
       System.out.println("nothing to do !");
       return;
     }
 
     // remove supplementary files in dest
-    deleteFiles(statusMap);
+    deleteFiles(plan);
 
     // generates modified files in dest
     var manager = new DocumentManager(dir);
     var generator = new Generator(manager, mapping, templateNode);
-    generateFiles(generator, statusMap);
+    generateFiles(generator, plan);
   }
 }

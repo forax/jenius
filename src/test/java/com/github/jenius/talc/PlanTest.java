@@ -8,11 +8,11 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import static com.github.jenius.talc.Status.Kind.PRIVATE;
 import static com.github.jenius.talc.Status.Kind.PUBLIC;
 import static com.github.jenius.talc.Status.State.ADDED;
 import static com.github.jenius.talc.Status.State.REMOVED;
 import static com.github.jenius.talc.Status.State.UPDATED;
-import static java.util.stream.Collectors.toMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PlanTest {
@@ -22,26 +22,20 @@ public class PlanTest {
     var srcPath2 = Path.of("/src/file2");
     var destPath1 = Path.of("/dest/file1");
     var destPath2 = Path.of("/dest/file2");
-    var statusMap = new LinkedHashMap<Path, Status>();
-    statusMap.put(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
-    statusMap.put(srcPath2, new Status(ADDED, PUBLIC, destPath2));
-    var plan = new Plan(statusMap);
+    var plan = new Plan();
+    plan.add(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
+    plan.add(srcPath2, new Status(ADDED, PUBLIC, destPath2));
 
     assertAll(
         () -> assertNotNull(plan),
         () -> assertEquals(2, plan.statusMap().size()),
         () -> assertTrue(plan.statusMap().containsKey(srcPath1)),
         () -> assertTrue(plan.statusMap().containsKey(srcPath2)),
-        () -> assertEquals(UPDATED, plan.statusMap().get(srcPath1).state()),
-        () -> assertEquals(ADDED, plan.statusMap().get(srcPath2).state()),
-        () -> assertEquals(destPath1, plan.statusMap().get(srcPath1).destFile()),
-        () -> assertEquals(destPath2, plan.statusMap().get(srcPath2).destFile())
+        () -> assertEquals(UPDATED, plan.statusMap().get(srcPath1).getFirst().state()),
+        () -> assertEquals(ADDED, plan.statusMap().get(srcPath2).getFirst().state()),
+        () -> assertEquals(destPath1, plan.statusMap().get(srcPath1).getFirst().destFile()),
+        () -> assertEquals(destPath2, plan.statusMap().get(srcPath2).getFirst().destFile())
     );
-  }
-
-  @Test
-  public void shouldThrowExceptionWhenStatusMapIsNull() {
-    assertThrows(NullPointerException.class, () -> new Plan(null));
   }
 
   @Test
@@ -50,10 +44,9 @@ public class PlanTest {
     var srcPath2 = Path.of("/src/file2");
     var destPath1 = Path.of("/dest/file1");
     var destPath2 = Path.of("/dest/file2");
-    var statusMap = new LinkedHashMap<Path, Status>();
-    statusMap.put(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
-    statusMap.put(srcPath2, new Status(REMOVED, PUBLIC, destPath2));
-    var plan = new Plan(statusMap);
+    var plan = new Plan();
+    plan.add(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
+    plan.add(srcPath2, new Status(REMOVED, PUBLIC, destPath2));
 
     var expected = srcPath1 + ": " + new Status(UPDATED, PUBLIC, destPath1) + "\n" +
         srcPath2 + ": " + new Status(REMOVED, PUBLIC, destPath2);
@@ -64,33 +57,14 @@ public class PlanTest {
   public void shouldReturnUnmodifiableStatusMap() {
     var srcPath = Path.of("/src/file");
     var destPath = Path.of("/dest/file");
-    var statusMap = new LinkedHashMap<Path, Status>();
-    statusMap.put(srcPath, new Status(ADDED, PUBLIC, destPath));
-    var plan = new Plan(statusMap);
+    var plan = new Plan();
+    plan.add(srcPath, new Status(ADDED, PUBLIC, destPath));
 
     assertThrows(UnsupportedOperationException.class,
         () -> plan.statusMap().put(
             Path.of("/src/new"),
-            new Status(ADDED, PUBLIC, Path.of("/dest/new"))
+            List.of(new Status(ADDED, PUBLIC, Path.of("/dest/new")))
         ));
-  }
-
-  @Test
-  public void shouldCreateDefensiveCopyOfInputMap() {
-    var srcPath1 = Path.of("/src/file1");
-    var srcPath2 = Path.of("/src/file2");
-    var destPath1 = Path.of("/dest/file1");
-    var destPath2 = Path.of("/dest/file2");
-    var statusMap = new LinkedHashMap<Path, Status>();
-    statusMap.put(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
-    statusMap.put(srcPath2, new Status(ADDED, PUBLIC, destPath2));
-    var plan = new Plan(statusMap);
-    statusMap.put(Path.of("/src/file3"), new Status(REMOVED, PUBLIC, Path.of("/dest/file3")));
-
-    assertAll(
-        () -> assertEquals(2, plan.statusMap().size()),
-        () -> assertNotEquals(statusMap.size(), plan.statusMap().size())
-    );
   }
 
   @Test
@@ -100,15 +74,13 @@ public class PlanTest {
     var destPath1 = Path.of("/dest/file1");
     var destPath2 = Path.of("/dest/file2");
 
-    var statusMap1 = new LinkedHashMap<Path, Status>();
-    statusMap1.put(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
-    statusMap1.put(srcPath2, new Status(ADDED, PUBLIC, destPath2));
-    var plan1 = new Plan(statusMap1);
+    var plan1 = new Plan();
+    plan1.add(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
+    plan1.add(srcPath2, new Status(ADDED, PUBLIC, destPath2));
 
-    var statusMap2 = new LinkedHashMap<Path, Status>();
-    statusMap2.put(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
-    statusMap2.put(srcPath2, new Status(ADDED, PUBLIC, destPath2));
-    var plan2 = new Plan(statusMap2);
+    var plan2 = new Plan();
+    plan2.add(srcPath1, new Status(UPDATED, PUBLIC, destPath1));
+    plan2.add(srcPath2, new Status(ADDED, PUBLIC, destPath2));
 
     assertAll(
         () -> assertEquals(plan1, plan2),
@@ -136,24 +108,44 @@ public class PlanTest {
     var planFactory = new PlanFactory(PlanTest::mapping);
     var root = path.resolve("root");
     var dest = path.resolve("dest");
-    var plan = planFactory.diff(root, dest);
+    var plan = planFactory.diff(root, dest, null);
 
-    record StatusPair(Path path, Status status) {}
-    var pairs = List.of(
-        new StatusPair(root.resolve("index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("index.html"))),
-        new StatusPair(root.resolve("template.html"), new Status(ADDED, PUBLIC, dest.resolve("template.html"))),
-        new StatusPair(root.resolve("Java"), new Status(ADDED, PUBLIC, dest.resolve("Java"))),
-        new StatusPair(root.resolve("Java/index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("Java/index.html"))),
-        new StatusPair(root.resolve("Java/td01.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("Java/td01.html"))),
-        new StatusPair(root.resolve("System"), new Status(ADDED, PUBLIC, dest.resolve("System"))),
-        new StatusPair(root.resolve("System/index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/index.html"))),
-        new StatusPair(root.resolve("System/td02.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/td02.html"))),
-        new StatusPair(root.resolve("System/PRIVATE"), new Status(ADDED, PUBLIC, dest.resolve("System/PRIVATE"))),
-        new StatusPair(root.resolve("System/PRIVATE/td02-ls.h"), new Status(ADDED, PUBLIC, dest.resolve("System/PRIVATE/td02-ls.h"))),
-        new StatusPair(root.resolve("System/PRIVATE/td02-ls.c"), new Status(ADDED, PUBLIC, dest.resolve("System/PRIVATE/td02-ls.c"))),
-        new StatusPair(dest.resolve("should_be_removed.txt"), new Status(REMOVED, PUBLIC, dest.resolve("should_be_removed.txt"))));
-    var expected = pairs.stream().collect(toMap(StatusPair::path, StatusPair::status));
+    var plan2 = new Plan();
+    plan2.add(root.resolve("index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("index.html")));
+    plan2.add(root.resolve("template.html"), new Status(ADDED, PUBLIC, dest.resolve("template.html")));
+    plan2.add(root.resolve("Java"), new Status(ADDED, PUBLIC, dest.resolve("Java")));
+    plan2.add(root.resolve("Java/index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("Java/index.html")));
+    plan2.add(root.resolve("Java/td01.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("Java/td01.html")));
+    plan2.add(root.resolve("System"), new Status(ADDED, PUBLIC, dest.resolve("System")));
+    plan2.add(root.resolve("System/PRIVATE"), new Status(ADDED, PUBLIC, dest.resolve("System/PRIVATE")));
+    plan2.add(root.resolve("System/index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/index.html")));
+    plan2.add(root.resolve("System/td02.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/td02.html")));
+    plan2.add(dest.resolve("should_be_removed.txt"), new Status(REMOVED, PUBLIC, dest.resolve("should_be_removed.txt")));
 
-    assertEquals(expected,plan.statusMap());
+    assertEquals(plan2,plan);
+  }
+
+  @Test
+  public void shouldDiffWithPrivateStatusPlan() throws IOException, URISyntaxException {
+    var path = Path.of(PlanTest.class.getResource(".").toURI());
+    var planFactory = new PlanFactory(PlanTest::mapping);
+    var root = path.resolve("root/System");
+    var dest = path.resolve("dest");
+    var privateDest = dest.resolve("private");
+    var plan = planFactory.diff(root, dest, privateDest);
+
+    var plan2 = new Plan();
+    plan2.add(root.resolve("index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("index.html")));
+    plan2.add(root.resolve("index.xumlv"), new Status(ADDED, PRIVATE, dest.resolve("private/index.html")));
+    plan2.add(root.resolve("td02.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("td02.html")));
+    plan2.add(root.resolve("td02.xumlv"), new Status(ADDED, PRIVATE, dest.resolve("private/td02.html")));
+    plan2.add(root.resolve("PRIVATE"), new Status(ADDED, PUBLIC, dest.resolve("PRIVATE")));
+    plan2.add(root.resolve("PRIVATE"), new Status(ADDED, PRIVATE, dest.resolve("private/PRIVATE")));
+    plan2.add(root.resolve("PRIVATE/td02-ls.h"), new Status(ADDED, PRIVATE, dest.resolve("private/PRIVATE/td02-ls.h")));
+    plan2.add(root.resolve("PRIVATE/td02-ls.c"), new Status(ADDED, PRIVATE, dest.resolve("private/PRIVATE/td02-ls.c")));
+    plan2.add(dest.resolve("should_be_removed.txt"), new Status(REMOVED, PUBLIC, dest.resolve("should_be_removed.txt")));
+    plan2.add(dest.resolve("private/should_be_removed2.txt"), new Status(REMOVED, PRIVATE, dest.resolve("private/should_be_removed2.txt")));
+
+    assertEquals(plan2,plan);
   }
 }
