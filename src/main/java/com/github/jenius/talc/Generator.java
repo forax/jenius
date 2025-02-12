@@ -21,8 +21,11 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     Objects.requireNonNull(template);
   }
 
-  private static ComponentStyle noAnswer() {
-    return ComponentStyle.of("answer", (_, _, b) -> b.hide());
+  private static ComponentStyle answer(boolean activateAnswer) {
+    Component component = activateAnswer
+        ? (_, _, b) -> b.node("div", Map.of("class", "answer"))
+        : (_, _, b) -> b.hide();
+    return ComponentStyle.of("answer", component);
   }
 
   //
@@ -225,11 +228,11 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     );
   }
 
-  public void generate(Path dirPath, Path destPath) throws IOException {
+  public void generate(Path dirPath, Path destPath, boolean activateAnswer) throws IOException {
     Objects.requireNonNull(dirPath);
     Objects.requireNonNull(destPath);
     var style = ComponentStyle.anyMatch(
-        noAnswer(),
+        answer(activateAnswer),
         file(dirPath),
         defaultStyle(),
         textDecoration()

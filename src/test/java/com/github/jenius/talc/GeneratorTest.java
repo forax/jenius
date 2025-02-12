@@ -44,7 +44,7 @@ public class GeneratorTest {
     var manager = new DocumentManager(root);
 
     var generator = new Generator(manager, mapping(), templateNode);
-    generator.generate(file, output);
+    generator.generate(file, output, false);
   }
 
   @Test
@@ -59,7 +59,7 @@ public class GeneratorTest {
     var manager = new DocumentManager(root);
 
     var generator = new Generator(manager, mapping(), templateNode);
-    generator.generate(file, output);
+    generator.generate(file, output, false);
   }
 
   @Test
@@ -74,7 +74,7 @@ public class GeneratorTest {
     var manager = new DocumentManager(root);
 
     var generator = new Generator(manager, mapping(), templateNode);
-    generator.generate(file, output);
+    generator.generate(file, output, false);
   }
 
   @Test
@@ -154,7 +154,7 @@ public class GeneratorTest {
           continue;
         }
         //System.out.println("generate " + destFile + " " + state);
-        generator.generate(path, destFile);
+        generator.generate(path, destFile, status.kind() == Status.Kind.PRIVATE);
       }
     }
   }

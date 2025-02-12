@@ -6,6 +6,7 @@ import com.github.jenius.talc.DocumentManager;
 import com.github.jenius.talc.Generator;
 import com.github.jenius.talc.Plan;
 import com.github.jenius.talc.PlanFactory;
+import com.github.jenius.talc.Status;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -61,7 +62,7 @@ public class Main {
               continue;
             }
             System.out.println("generate " + destFile + " " + state);
-            generator.generate(path, destFile);
+            generator.generate(path, destFile, status.kind() == Status.Kind.PRIVATE);
           }
         }
       }
