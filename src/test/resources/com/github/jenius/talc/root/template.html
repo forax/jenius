@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"></meta>
+        <title><insert-title-text/></title>
+        <css-link rel="stylesheet" type="text/css" href="https://igm.univ-mlv.fr/ens/resources/stylesheet.css" media="screen"></css-link>
+        <css-link rel="stylesheet" type="text/css" href="https://igm.univ-mlv.fr/ens/resources/printstylesheet.css" media="print"></css-link>
+        <css-link rel="stylesheet" type="text/css" href="https://igm.univ-mlv.fr/ens/resources/sh_ide-eclipse.css"></css-link>
+        <script type="text/javascript">
+            if (document.location.href.indexOf('http://igm/', 0) !== -1) {
+              document.location.href = document.location.href.replace(/.univ-mlv.fr/, '').replace(/http:\/\/(igm|www-igm)/, 'http://igm.univ-mlv.fr');
+            }
+            if (document.location.href.indexOf('http://www-igm/', 0) !== -1) {
+              document.location.href = document.location.href.replace(/.univ-mlv.fr/, '').replace(/http:\/\/(igm|www-igm)/, 'http://igm.univ-mlv.fr');
+            }
+
+            function viewPDF() {
+              window.print();
+            }
+
+            function myswitch() {
+              document.location.href = document.location.href.replace(/ens/, 'ens/private').replace('http://', 'https://');
+            }
+        </script>
+    </head>
+    <body>
+        <div class="conteneur">
+            <div class="contenu">
+                <span style="text-align:left;">
+                    <insert-breadcrumb/>
+                </span>
+                <span style="float:right;" class="noprint">
+                    <div class="noprint">
+                        <table>
+                            <tr>
+                                <td><a href="javascript:myswitch();" style="text-decoration:none">
+                                    <img src="https://igm.univ-mlv.fr/ens/resources/lock_icon.gif" class="noprint" align="middle"/>
+                                   </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </span>
+                <hr noshade="true" size="1" style="clear: both;"/>
+                <table>
+                    <tr>
+                        <td valign="middle"><img class="print" src="https://igm.univ-mlv.fr/ens/resources/mlv.png" alt="[LOGO]"/></td>
+                       <td style="vertical-align : middle;">
+                           <h1>
+                               <insert-title-text/>
+                           </h1>
+                       </td>
+                    </tr>
+                </table>
+                <hr/>
+                <insert-infos/>
+
+                <hr noshade="true" size="1"/>
+
+                <insert-content/>
+
+                <hr noshade="true" size="1"/>
+                <span style="float:right;" class="noprint">
+                 <div class="noprint">
+                 </div>
+                </span>
+                <div align="center" class="copyright">© Université de Marne-la-Vallée</div>
+            </div>
+        </div>
+    </body>
+</html>
