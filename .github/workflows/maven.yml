@@ -8,7 +8,15 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        include:
+          - os: ubuntu-latest
+            asset_name: app-linux
+          - os: macos-latest
+            asset_name: app-macos
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
