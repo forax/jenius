@@ -37,7 +37,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.folder_name }}/jenius
+        name: ${{ matrix.folder_name }}-jenius
         path: target/jenius
 
   release:
@@ -53,8 +53,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          linux/*
-          macos/*
+          linux-jenius
+          macos-jenius
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
