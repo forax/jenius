@@ -86,16 +86,16 @@ public class Main {
     System.out.println("INFO config dir:" + dir.toAbsolutePath());
     System.out.println("INFO config dest:" + dest.toAbsolutePath());
     System.out.println("INFO config private dest:" + privateDest.toAbsolutePath());
-    System.out.println("INFO config template:" + template);
+    System.out.println("INFO config template:" + template.toAbsolutePath());
 
     Node templateNode;
     try(var reader = Files.newBufferedReader(template)) {
       templateNode = XML.transform(reader);
     }
 
-    // do a diff between dir and dest
+    // do a diff between dir, dest and private dest
     var plan = planFactory.diff(dir, dest, privateDest);
-    plan.remove(template);  // skip template.html
+    plan.remove(template);  // skip template
 
     if (plan.statusMap().isEmpty()) {
       System.out.println("nothing to do !");
