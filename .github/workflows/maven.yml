@@ -15,9 +15,9 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
         include:
           - os: ubuntu-latest
-            folder_name: linux
+            prefix_name: linux
           - os: macos-latest
-            folder_name: macos
+            prefix_name: macos
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -39,7 +39,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.folder_name }}-jenius
+        name: ${{ matrix.prefix_name }}-jenius
         path: target/jenius
 
   release:
@@ -55,8 +55,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          linux-jenius
-          macos-jenius
+          linux-jenius.zip
+          macos-jenius.zip
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
