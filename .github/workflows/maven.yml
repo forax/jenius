@@ -26,5 +26,8 @@ jobs:
         version: 'latest'
         java-version: '23'
         cache: maven
-    - name: Build with Maven
+    - name: Build Java jar
       run: mvn -B package
+    - name: Build Native Image
+      run: |
+        mvn -B -Pnative -DskipTests package
