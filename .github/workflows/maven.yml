@@ -17,5 +17,6 @@ jobs:
       with:
         version: 'latest'
         java-version: '23'
+        cache: maven
     - name: Build with Maven
       run: mvn package
