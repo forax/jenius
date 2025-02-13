@@ -70,8 +70,8 @@ public class Main {
   }
 
   public static void main(String[] args) throws IOException {
-    if (args.length != 3) {
-      System.err.println("  jenius sourceDir destinationDir template");
+    if (args.length != 4) {
+      System.err.println("  jenius sourceDir destinationDir privateDir template");
       System.exit(1);
       return;
     }
@@ -80,9 +80,13 @@ public class Main {
     var planFactory = new PlanFactory(mapping);
     var dir = Path.of(args[0]);
     var dest = Path.of(args[1]);
-    var template = Path.of(args[2]);
+    var privateDest = Path.of(args[2]);
+    var template = Path.of(args[3]);
 
-    System.out.println("INFO config: dir:" + dir.toAbsolutePath() + " dest:" + dest.toAbsolutePath() + " template:" + template);
+    System.out.println("INFO config dir:" + dir.toAbsolutePath());
+    System.out.println("INFO config dest:" + dest.toAbsolutePath());
+    System.out.println("INFO config private dest:" + privateDest.toAbsolutePath());
+    System.out.println("INFO config template:" + template);
 
     Node templateNode;
     try(var reader = Files.newBufferedReader(template)) {
@@ -90,7 +94,7 @@ public class Main {
     }
 
     // do a diff between dir and dest
-    var plan = planFactory.diff(dir, dest, null);
+    var plan = planFactory.diff(dir, dest, privateDest);
     plan.remove(template);  // skip template.html
 
     if (plan.statusMap().isEmpty()) {
