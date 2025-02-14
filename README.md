@@ -3,9 +3,9 @@ A small executable to publish HTML files defined using the .xumlv format
 
 ### The .xumlv format
 
-TODO
+This document [tipi.md](tipi.md) explains the basics of the .xumlv format.
 
-Here is the full DTD is [tipi.dtd](tipi.dtd)
+Here is the full DTD: [tipi.dtd](tipi.dtd)
 
 ### How it works ?
 
