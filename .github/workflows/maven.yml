@@ -37,6 +37,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         path: target/jenius-*.jar
+        overwrite: true
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
