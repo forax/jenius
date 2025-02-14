@@ -30,23 +30,32 @@ jobs:
         java-version: '23'
         cache: maven
 
+    - name: Get VERSION from tag or commit
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        else
+          echo "VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        fi    
+
     - name: Build Native Image
       run: |
         mvn -B -Pnative package
-        cp target/jenius target/${{ matrix.prefix_name }}-jenius
+        cp target/jenius-*.jar jenius-${{ env.VERSION }}.jar
+        cp target/jenius jenius-${{ env.VERSION }}-${{ matrix.prefix_name }}
 
     - name: Upload Java Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: java-artifact
-        path: target/jenius-*.jar
+        name: jenius-java
+        path: jenius-*.jar
         overwrite: true
 
     - name: Upload Binary Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.prefix_name }}-jenius
-        path: target/${{ matrix.prefix_name }}-jenius
+        name: jenius-${{ matrix.prefix_name }}
+        path: jenius-*-${{ matrix.prefix_name }}
 
   release:
     needs: build
@@ -61,9 +70,9 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          java-artifact/*
-          linux-jenius/*
-          macos-jenius/*
+          jenius-java/*
+          jenius-linux/*
+          jenius-macos/*
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
