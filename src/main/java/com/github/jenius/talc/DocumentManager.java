@@ -28,6 +28,9 @@ public final class DocumentManager {
   static Node readPathAsDocument(Path path) throws IOException {
     try(var reader = Files.newBufferedReader(path)) {
       return XML.transform(reader);
+    } catch(IOException e) {
+      e.addSuppressed(new IOException("while reading " + path));
+      throw e;
     }
   }
 
