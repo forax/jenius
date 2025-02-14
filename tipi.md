@@ -71,26 +71,26 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 
 #### calendar and keydate
 - **calendar**: URL reference for calendar
-- **keydate**: Important date marker with title and date
+- **keydate**: Important date marker with `title` and `date`
 
-### Media and References
+### reference elements
+- **projectref**: Project reference (`name` required)
+- **projectlink**: Project URL (`url` and `title` required)
+- **photolink**: Photo URL reference (`url` required)
+
+### Media
 
 #### image
-- Required src attribute
-- Optional width, height, align attributes
+- Required `src` attribute
+- Optional `width`, `height` and `align` attributes
 
 #### link
-- Hyperlink element with required href attribute
+- Hyperlink element with required `href` attribute
 
 #### srcref
 - Source code reference
 - Required `name` attribute
 - Optional `link` attribute
-
-### Reference Elements
-- **projectref**: Project reference (name required)
-- **projectlink**: Project URL (url and title required)
-- **photolink**: Photo URL reference (url required)
 
 ## Usage Examples
 
