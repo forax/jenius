@@ -21,9 +21,9 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 - Can contain an **abstract**, **section**, **paragraph**, **list**, **code**, **answer**.
 
 ### index
-- Index page container
+- Directory or index page container
 - Contains **title** and **info** sections
-- Can include standard content elements **section**, **paragraph**, **list**, **tdref**.
+- Can include standard content elements **section**, **paragraph**, **list**, **dir** or **tdref**.
 
 ### doc and cours
 - General document and course containers
@@ -35,7 +35,7 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 
 #### exercise
 - Exercise container with a required `title`
-- Can contain **paragraph**, **code**, **list**, **answer**
+- Can contain **paragraph**, **code**, **list**, **item**, **answer**
 
 #### answer
 - Answer containers for professors
