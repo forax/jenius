@@ -14,16 +14,16 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 - Must contain a **title** and an optional **subtitle**
 - Can contain an **abstract**, **exercise**, **section**, **paragraph**, **list**, **code**, **answer**.
 
+### index
+- Directory or index page container
+- Contains **title** and **info** sections
+- Can include standard content elements **section**, **paragraph**, **list**, **dir** or **tdref**.
+
 ### project
 - Project documentation container
 - Attribute `draft`, true or false
 - Requires a **title**, and an optional **subtitle**
 - Can contain an **abstract**, **section**, **paragraph**, **list**, **code**, **answer**.
-
-### index
-- Directory or index page container
-- Contains **title** and **info** sections
-- Can include standard content elements **section**, **paragraph**, **list**, **dir** or **tdref**.
 
 ### doc and cours
 - General document and course containers
@@ -135,11 +135,11 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
     <paragraph>This course covers fundamental programming concepts...</paragraph>
   </section>
   
-  <exercice title="Exercise 1">
+  <exercise title="Exercise 1">
     ...
   </exercise>
   
-  <exercice title="Exercise 2">
+  <exercise title="Exercise 2">
     ...
   </exercise>
 </td>
