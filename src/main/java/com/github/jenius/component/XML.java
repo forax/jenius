@@ -242,7 +242,7 @@ public class XML {
     HTML, XML
   }
 
-  private static org.jsoup.nodes.Document rewrite(org.jsoup.nodes.Document document, ComponentStyle style) throws IOException {
+  private static org.jsoup.nodes.Document rewrite(org.jsoup.nodes.Document document, ComponentStyle style) {
     var result = new org.jsoup.nodes.Document("");
     var filter = filter(Node.asContentHandler(result), style);
     Node.visit(document, filter);
@@ -286,11 +286,7 @@ public class XML {
   public static Node transform(Node document, ComponentStyle style) {
     Objects.requireNonNull(document);
     Objects.requireNonNull(style);
-    try {
-      return new Node(rewrite((org.jsoup.nodes.Document) document.jsoupNode, style));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    return new Node(rewrite((org.jsoup.nodes.Document) document.jsoupNode, style));
   }
 
   public static void transform(Node document, Writer writer, OutputKind outputKind, ComponentStyle style) throws IOException {
