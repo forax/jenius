@@ -1,37 +1,45 @@
-# Course Content Management System
+# Course Content Management Description Format
 
 This DTD is designed for educational institutions managing course content.
-It provides support for structured documents, exercises, team description, and various types of educational materials.
+It provides support for structured documents, indexes, exercises, team description, and various types of educational materials.
 The structure allows for both content organization and presentation formatting.
 
 Here is the full DTD is [tipi.dtd](tipi.dtd).
 
-## Core Document Types
+## Main Container Elements
 
-### Main Container Elements
-
-#### td
+### td
 - Teaching Document container
 - Attribute `draft`, true or false
 - Must contain a **title** and an optional **subtitle**
 - Can contain an **abstract**, **exercise**, **section**, **paragraph**, **list**, **code**, **answer**.
 
-#### project
+### project
 - Project documentation container
 - Attribute `draft`, true or false
 - Requires a **title**, and an optional **subtitle**
 - Can contain an **abstract**, **section**, **paragraph**, **list**, **code**, **answer**.
 
-#### index
+### index
 - Index page container
 - Contains **title** and **info** sections
 - Can include standard content elements **section**, **paragraph**, **list**, **tdref**.
 
-#### doc and cours
+### doc and cours
 - General document and course containers
 - Both have a **title**, an optional **subtitle**, and content elements
 
 ## Content Elements
+
+### Educational Elements
+
+#### exercise
+- Exercise container with a required `title`
+- Can contain **paragraph**, **code**, **list**, **answer**
+
+#### answer
+- Answer containers for professors
+- Can include source references (**srcref**) and content elements
 
 ### Text and Formatting
 
@@ -42,7 +50,7 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 - **code**: For code snippets, can contain formatted text and lists
 - **list**: Ordered or unordered lists with style attribute
 
-### Text Styling
+#### Text Styling
 - **tt**: Teletype text
 - **bold**: Bold text
 - **italic**: Italic text
@@ -51,19 +59,9 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 - **sub**: Subscript
 - **font**: Text with `color` formatting
 
-### Educational Elements
-
-#### exercise
-- Exercise container with a required `title`
-- Can contain **paragraph**, **code**, **list**, **answer**
-
-#### answer
-- Answer containers for students and professors
-- Can include source references (**srcref**) and content elements
-
 ### Team and Calendar Information
 
-### infos
+#### infos
 - Container for metadata
 - Holds **team** info, **calendar**, project reference (**projectref**), **key-date**
 
