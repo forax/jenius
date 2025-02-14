@@ -13,7 +13,7 @@ TODO
 
 ### How to get it ?
 
-The [Release](https://github.com/forax/jenius/releases) tab of Github contains several executables
+The [Releases](https://github.com/forax/jenius/releases) tab of Github contains several executables
 - the java jar file (jenius-*.jar)
 - the executable for linux (jenius-*-linux) and
 - the executable for macOS (jenius-*-macos).
