@@ -126,7 +126,7 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
   </list>
 </index> 
 
-<!-- Basic td -->
+<!-- Td example -->
 <td>
   <title>Introduction to Java</title>
   <abstract>main, compilation, etc</abstract>
