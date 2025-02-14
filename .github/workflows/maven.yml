@@ -31,11 +31,14 @@ jobs:
         cache: maven
 
     - name: Build Native Image
-      run: mvn -B -Pnative package
+      run: |
+        mvn -B -Pnative package
+        cp target/jenius target/${{ matrix.prefix_name }}-jenius
 
     - name: Upload Java Artifact
       uses: actions/upload-artifact@v4
       with:
+        name: java-artifact
         path: target/jenius-*.jar
         overwrite: true
 
@@ -43,7 +46,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.prefix_name }}-jenius
-        path: target/jenius
+        path: target/${{ matrix.prefix_name }}-jenius
 
   release:
     needs: build
@@ -58,7 +61,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          jenius-*/*
+          java-artifact/*
           linux-jenius/*
           macos-jenius/*
         draft: false
