@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import static com.github.jenius.talc.Status.Kind.PRIVATE;
@@ -120,6 +119,7 @@ public class PlanTest {
     plan2.add(root.resolve("System/PRIVATE"), new Status(ADDED, PUBLIC, dest.resolve("System/PRIVATE")));
     plan2.add(root.resolve("System/index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/index.html")));
     plan2.add(root.resolve("System/td02.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/td02.html")));
+    plan2.add(root.resolve("System/projet.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("System/projet.html")));
     plan2.add(dest.resolve("should_be_removed.txt"), new Status(REMOVED, PUBLIC, dest.resolve("should_be_removed.txt")));
 
     assertEquals(plan2,plan);
@@ -139,6 +139,8 @@ public class PlanTest {
     plan2.add(root.resolve("index.xumlv"), new Status(ADDED, PRIVATE, dest.resolve("private/index.html")));
     plan2.add(root.resolve("td02.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("td02.html")));
     plan2.add(root.resolve("td02.xumlv"), new Status(ADDED, PRIVATE, dest.resolve("private/td02.html")));
+    plan2.add(root.resolve("projet.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("projet.html")));
+    plan2.add(root.resolve("projet.xumlv"), new Status(ADDED, PRIVATE, dest.resolve("private/projet.html")));
     plan2.add(root.resolve("PRIVATE"), new Status(ADDED, PUBLIC, dest.resolve("PRIVATE")));
     plan2.add(root.resolve("PRIVATE"), new Status(ADDED, PRIVATE, dest.resolve("private/PRIVATE")));
     plan2.add(root.resolve("PRIVATE/td02-ls.h"), new Status(ADDED, PRIVATE, dest.resolve("private/PRIVATE/td02-ls.h")));

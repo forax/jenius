@@ -168,7 +168,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     };
   }
 
-  private ComponentStyle file(Path filePath) throws IOException {
+  private ComponentStyle file(Path filePath, boolean privateAccess) throws IOException {
     assert filePath.getFileName().toString().endsWith(".xumlv");
     var metadata = manager.getFileMetadata(filePath);
     var document = metadata.document();
@@ -177,7 +177,13 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     var infosOpt = metadata.infosOpt();
     return ComponentStyle.of(
         "insert-content", Component.of((_, _, b) -> {
-          for(var node : document.getFirstElement().orElseThrow().childNodes()) {
+          var firstElement = document.getFirstElement().orElseThrow();
+          var draft = Boolean.parseBoolean(firstElement.attributes().getOrDefault("draft", "false"));
+          if (draft & !privateAccess) {
+            b.node("div", "class", "draft", c -> c.text("A venir ... "));
+            return;
+          }
+          for(var node : firstElement.childNodes()) {
             b.include(node);
           }
         }),
@@ -228,12 +234,12 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     );
   }
 
-  public void generate(Path dirPath, Path destPath, boolean activateAnswer) throws IOException {
+  public void generate(Path dirPath, Path destPath, boolean privateAccess) throws IOException {
     Objects.requireNonNull(dirPath);
     Objects.requireNonNull(destPath);
     var style = ComponentStyle.anyMatch(
-        answer(activateAnswer),
-        file(dirPath),
+        answer(privateAccess),
+        file(dirPath, privateAccess),
         defaultStyle(),
         textDecoration()
     );

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE project PUBLIC "-//University of Marne-la-Vallee//DTD tipi//EN"
+        "http://igm.univ-mlv.fr/ens/resources/tipi.dtd">
+<project draft="true">
+<!--Projet de java avancé-->
+<title>Projet de java avancé</title>
+<subtitle>HMM2000</subtitle>
+	<abstract>Le but de ce projet est de réaliser un jeu proche du jeu <italic>heroes of
+might and magic</italic>. Le jeu se passe dans l'univers médiéval fantastique
+et met en scène des héros à la solde d'un seigneur accompagnés d'une
+armée qui parcourt la carte à la recherche de richesses et à la conquête
+d'autres royaumes.</abstract>
+
+<section title="Bibliothèque graphique">
+<paragraph>Le projet est à réaliser avec la bibliothèque graphique <italic>lawrence</italic>. Elle
+prend en charge toute la partie graphique de la manière suivante:</paragraph>
+<list style="unordered">
+  <item>elle permet l'ouverture d'une fenêtre représentant une grille dont
+    chaque case est remplie par une ou plusieurs icônes (image bitmap ou
+    rendu vectoriel svg);</item>
+  <item>chaque icône est représenté par un objet d'un certain type
+    <tt>E</tt> et l'application modifie l'affichage en indiquant la liste
+    des icône sous forme de <tt>Collection&lt;E&gt;</tt>.</item>
+</list>
+<paragraph>Un exemple de jeu de chasse à la grenouille est disponible sur le site
+web de <italic>lawrence</italic>.</paragraph>
+<paragraph>Il n'est pas autorisé de gérer l'affichage graphique par un autre moyen,
+ni de modifier ou recopier le code du paquetage, ni de placer ses propres
+classes dans le paquetage <tt>fr.umlv.lawrence</tt>.</paragraph>
+</section>
+<section title="Éléments du jeu">
+<paragraph>La carte contient les éléments:</paragraph>
+<list style="unordered">
+  <item>un château par joueur; s'il le perd, il perd la partie;</item>
+  <item>des zones de resources permettant d'obtenir de l'or: 
+    <list style="unordered">
+      <item>des zones qui se remplissent un peu tous les jours qui sont
+        entièrement vidée par celui qui y passe;</item>
+      <item>des zones qui ont une valeur fixe disponible toutes les semaines (7
+        jours)</item>
+      <item>des zones qui ont une valeur fixe disponible tous les mois (30
+        jours)</item>
+    </list>
+  </item>
+  <item>des obstacles (arbre, eau, montagne, <italic>etc</italic>.)</item>
+  <item>des zones où l'on peut passer (plaine, chemins, <italic>etc</italic>.)</item>
+  <item>des marchands permettant d'acheter des sorts (téléportation,
+    destruction ou ajout d'un obstacle, <italic>etc</italic>.) qui manipulent la
+    carte;</item>
+  <item>des arènes où l'on peut recruter des créatures.</item>
+</list>
+<paragraph>Les acteurs du jeu sont les suivants:</paragraph>
+<list style="unordered">
+  <item>les héros qui sont achetés par le joueur au château (pour un salaire
+    mensuel plus un fixe à l'embauche) qui sont de trois classes, les
+    archers, les chefs de guerre et les sorciers et qui doivent être
+    accompagnés d'une armée (donc au moins une créature);</item>
+  <item>les créatures qui sont recrutées au château et dans les arènes et
+    qui se déplacent exclusivement en compagnie d'un héro ou restent au
+    château pour le défendre;</item>
+  <item>des troupes de monstres qui barrent la route ou les accès aux
+    resources (qui ne bougent pas).</item>
+</list>
+</section>
+<section title="Le château">
+<paragraph>Chaque joueur possède initialement un chateau. Dans ce chateau, le joueur
+peut recruter des héros, recruter des créatures (pour un fixe) ou
+améliorer son chateau afin qu'il produise de nouvelles créatures plus
+puissantes. Le type des créatures est donné par le type du château et
+initialement, seul le type le plus simple de créature y est disponible. Le
+joueur peut construire des bâtiments (pour un coût et un certain nombre de
+jours) dans le château qui permettent:</paragraph>
+<list style="unordered">
+  <item>tour de magie: ajoute la possibilité de recruter des créatures
+    magiques</item>
+  <item>casernes: ajoute la possibilité de recruter des fantassins</item>
+  <item>volière: ajoute la possibilité de recruter des créatures
+  volantes</item>
+</list>
+<paragraph>On peut ensuite améliorer chaque bâtiment pour augmenter les valeurs des
+créatures recrutées.</paragraph>
+</section>
+<section title="Combats">
+<paragraph>Quand un combat a lieu, soit entre deux héros, soit entre un héro et un
+château, soit entre un héros et une troupe de monstres, chaque opposant a
+ses unités sur deux lignes, la première et la seconde. La disposition est
+prévue à l'avance par les joueurs, sauf si le héro est un chef de guerre
+et dans ce cas il peut changer la disposition après avoir vu les crétures
+de l'ennemi et leur disposition. Quand la première ligne est vide, la
+deuxième ligne compte comme si c'était la première.</paragraph>
+<paragraph>Les attaques peuvent être physiques ou élémentaires (feu, froid,
+foudre, <italic>etc</italic>.) Les créatures possèdent des points d'attaque pour
+chaque élément et les dommages physiques, des résistances (en pourcentage)
+aux éléments, des points de défense et des points de vie. Quand une
+créature en attaque une autre, le calcul est le suivant: celle qui reçoit
+l'attaque perd autant de points de vie que la somme des attaques de
+l'attaquant diminué par la résistence aux éléments à laquelle on
+soustrait ses points de défense, si bien sûr ce total est positif. Par
+exemple, si une créature fait 10 points d'attaque de feu et 10 points
+d'attaque physique à un créature qui a un résistance de 30% au feu et 5 de
+défense, elle perd (10+10×70%)-5=12 points de vie (note: 70=100-30).</paragraph>
+<paragraph>Les créatures magiques font des attaques élémentaires et/ou physiques
+et peuvent attaquer les premières lignes adverses même à partir de la
+seconde ligne. Les fantassins font des dégats physiques et ne peuvent
+attaquer que de la première ligne à la première ligne adverse et les
+créatures volantes font des dégâts physiques de n'importe quelle ligne à
+n'importe quelle autre. Au dernier niveau d'amélioration du château ou pour
+les mercenaires recrutés dans les arènes, on peut ajouter des dommages
+élémentaires aux créatures volantes et aux fantassins.</paragraph>
+<paragraph>Les héros peuvent agir de la manière suivante:</paragraph>
+<list style="unordered">
+  <item>l'archer peut envoyer des flêches qui font des dégâts physiques et
+    élémentaires soit à tous les membres de la première ligne, soit à un
+    membre de la seconde;</item>
+  <item>le sorcier peut attaquer par une attaque élémentaire soit une
+    créature en particulier, soit toutes les créatures y compris les
+    siennes;</item>
+  <item>le seigneur de guerre peut choisir de faire attaquer un type créature
+    (volant, sorcier ou fantassin) une fois de plus, ou faire passer une
+    créature qu'il commande (quelconque) d'une ligne à l'autre.</item>
+</list>
+<paragraph>Les combats on lieu en tour par tour: à chaque tour, le joueur peut
+choisir de faire jouer soit une créature soit le héros s'il n'a pas déjà
+attaqué. Ainsi, le joueur qui a le plus de créatures finira par jouer la
+fin de la manche tout seul. Un fois que toutes les créatures ont joué ou
+passé, on recommence une nouvelle manche. On s'arrête quand l'un des camps
+n'a plus de créature (on ne peut pas tuer le héro, mais le héro qui perd
+la bataille s'enfuit et n'est jamais retrouvé).</paragraph>
+<paragraph>Quand un joueur attaque une troupe de créatures, c'est le joueur qui
+commence, quand un joueur attaque un château, c'est le défenseur qui
+commence et quand un joueur attaque un héro adverse, c'est le défenseur qui
+commence sauf si un seul des héros est un seigneur de guerre, c'est dans ce
+cas le joueur qui le contrôle qui commence. Quand on attaque un château, il
+peut ne pas y avoir de héro, mais au plus un seul héro le défend.</paragraph>
+</section>
+<section title="Jour de jeu">
+<paragraph>Pendant un jour, un joueur déplace chacun de ses héros (dont le nombre
+de cases dépend de la plus lente des créatures de son armée) qui peut donc
+visiter plusieurs lieux et effectuer plusieurs combats, effectue
+d'éventuelles améliorations de son château (un seule en cours à la fois)
+et recrute des créatures au château (qui sont donc initialement placées
+dans le château) et transférer des créatures entre héros qui se
+recontrent ou entre le chateau et un héro quand ce dernier y retourne. Le
+mouvement des héros se fait par clic et il est faut utiliser le projet
+d'algorithmique pour le calcul du plus court chemin; il est autorisé de
+prendre le projet de quelqu'un d'autre à condition de le placer dans un jar
+séparé et de le préciser dans le rapport <tt>dev.pdf</tt>. Le chemin
+suivi par le héro doit être affiché au joueur pour qu'il décide ou non de
+confirmer le déplacement.</paragraph>
+</section>
+<section title="Rendu">
+<paragraph>Le projet est à rendre par mail aux chargés de TD et à l'enseignant de cours,
+pour la date fixé par l'agenda des projets. Le format de rendu est une
+archive au format zip (tout rar, tar.gz, 7z et autre ne sera pas ouvert)
+contenant:</paragraph>
+<list style="unordered">
+  <item>un répertoire <tt>src</tt> contenant les sources du projets et les
+    éventuelles ressources (images, sons, <italic>etc</italic>.) à recopier à
+    côté des classes;</item>
+  <item>un répertoire <tt>docs</tt> contenant un manuel de l'utilisateur
+    (<tt>user.pdf</tt>) et un manuel qui explique votre architecture
+    (<tt>dev.pdf</tt>) au format PDF;</item>
+  <item>un jar exécutable <tt>hmm.jar</tt> qui fonctionne avec <tt>java
+    -jar hmm.jar</tt> et donc qui possède une directive Class-Path
+    correcte dans son manifest; <bold>il est interdit</bold> de mettre
+    les classes de <tt>lawrence</tt> et/ou de <tt>batik</tt> dans
+    <tt>hmm.jar</tt>;</item>
+  <item>un <tt>build.xml</tt> qui permet de 
+    <list style="unordered">
+      <item>compiler les sources (target compile)</item>
+      <item>créer le jar exécutable (target jar)</item>
+      <item>générer la javadoc dans <tt>docs/doc</tt> (target
+      javadoc)</item>
+      <item>nettoyer le projet pour qu'il ne reste plus que les éléments
+        demandés (target clean)</item>
+    </list>
+  </item>
+  <item>un répertoire lib contenant les éventuelles bibliothèques dont a
+    besoin votre projet pour fonctionner.</item>
+</list>
+</section>
+<section title="Notation">
+	</section>
+</project>
