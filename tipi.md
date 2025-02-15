@@ -95,27 +95,6 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
 ## Usage Examples
 
 ```xml
-<!-- Course index -->
-<index>
-  <title>Java 101</title>
-  <infos>
-   ...
-  </infos>
-
-  <list>
-    <tdref name="td01.xumlv"/>
-    <tdref name="td02.xumlv"/>
-  </list>  
-</index>
-
-<!-- Team information -->
-<infos>
-  <team>
-    <leader name="John Doe" mail="john@example.com" www="example.com/john" />
-    <member name="Jane Smith" mail="jane@example.com" www="example.com/jane" />
-  </team>
-</infos>
-
 <!-- Year index -->
 <index>
   <title>2024-2025</title>
@@ -124,7 +103,23 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
     <dir name="Java"/>
     <dir name="System"/>
   </list>
-</index> 
+</index>
+
+<!-- Course index -->
+<index>
+  <title>Java 101</title>
+  <infos>
+    <team>
+      <leader name="John Doe" mail="john@example.com" www="example.com/john" />
+      <member name="Jane Smith" mail="jane@example.com" www="example.com/jane" />
+    </team>
+  </infos>
+
+  <list>
+    <tdref name="td01.xumlv"/>
+    <tdref name="td02.xumlv"/>
+  </list>  
+</index>
 
 <!-- Td example -->
 <td>
@@ -135,23 +130,18 @@ Here is the full DTD is [tipi.dtd](tipi.dtd).
     <paragraph>This course covers fundamental programming concepts...</paragraph>
   </section>
   
+  <exercise title="Hello World Program">
+    <paragraph>Write a program that prints "Hello, World!" to the console.</paragraph>
+    <code>
+      System.out.println("Hello, World!");
+    </code>
+    <answer>
+      <paragraph>The solution demonstrates basic output operations...</paragraph>
+    </answer>
+  </exercise>
+
   <exercise title="Exercise 1">
     ...
   </exercise>
-  
-  <exercise title="Exercise 2">
-    ...
-  </exercise>
 </td>
-
-<!-- Exercise example -->
-<exercise title="Hello World Program">
-  <paragraph>Write a program that prints "Hello, World!" to the console.</paragraph>
-  <code>
-    System.out.println("Hello, World!");
-  </code>
-  <answer>
-    <paragraph>The solution demonstrates basic output operations...</paragraph>
-  </answer>
-</exercise>
 ```
