@@ -80,7 +80,6 @@ public class XML {
     @Override
     public final void collect(BiConsumer<? super Node, ? super NodeBuilder> consumer) {
       Objects.requireNonNull(consumer);
-      Objects.requireNonNull(consumer);
       var ignore = (Action.Ignore) actionStack.pop();
       var document = Node.createDocument();
       var node = document.createNode(ignore.name, ignore.attrs);
