@@ -100,9 +100,14 @@ public class XML {
 
     @Override
     public final void around(Consumer<? super NodeBuilder> preBuilder, Consumer<? super NodeBuilder> postBuilder) {
-      var _ = (Action.Ignore) actionStack.pop();
+      var action = actionStack.pop();
+      var newName = switch (action) {
+        case Action.Ignore _ -> null;
+        case Action.Replace(String _newName) -> _newName;
+        case Action.EnumAction _, Action.Collect _, Action.Around _ -> throw new IllegalStateException("can not use around here");
+      };
       preBuilder.accept(delegatingNodeBuilder(filter, actionStack));
-      actionStack.push(new Action.Around(postBuilder));
+      actionStack.push(new Action.Around(postBuilder, newName));
     }
   }
 
@@ -111,7 +116,7 @@ public class XML {
     record Ignore(String name, Map<String,String> attrs) implements Action {}
     record Replace(String newName) implements Action {}
     record Collect(Node document, Node node, Consumer<Node> consumer) implements Action {}
-    record Around(Consumer<? super NodeBuilder> post) implements Action {}
+    record Around(Consumer<? super NodeBuilder> post, String newName) implements Action {}
   }
 
   private static ContentHandler filter(ContentHandler delegate, ComponentStyle style) {
@@ -156,21 +161,11 @@ public class XML {
 
       @Override
       public void startElement(String name, Map<String,String> attrs) {
-        switch (actionsStack.peek()) {
-          case null -> {}  // no action yet
-          case Action.EnumAction.EMIT -> {}
-          case Action.EnumAction.HIDE -> {
-            actionsStack.push(Action.EnumAction.HIDE);
-            return;
-          }
-          case Action.Ignore _, Action.Replace _, Action.Around _ -> {}
-          case Action.Collect(Node document, Node node, _) -> {
-            var newNode = document.createNode(name, attrs);
-            node.appendChild(newNode);
-            actionsStack.push(new Action.Collect(document, newNode, null));
-            return;
-          }
+        var action = actionsStack.peek();
+        if (startElementAction(name, attrs, action) == ApplyStyleResult.DO_NOT_APPLY) {
+          return;
         }
+
         var componentOpt = style.lookup(name);
         if (componentOpt.isPresent()) {
           var component = componentOpt.orElseThrow();
@@ -183,8 +178,48 @@ public class XML {
       }
 
       @Override
+      public void characters(String content) {
+        var action = Objects.requireNonNull(actionsStack.peek());
+        charactersAction(content, action);
+      }
+
+      @Override
       public void endElement(String name) {
         var action = actionsStack.pop();
+        endElementAction(name, action);
+      }
+
+      private enum ApplyStyleResult { DO_APPLY, DO_NOT_APPLY }
+
+      private ApplyStyleResult startElementAction(String name, Map<String, String> attrs, Action action) {
+        return switch (action) {
+          case null -> ApplyStyleResult.DO_APPLY;  // no action yet
+          case Action.EnumAction.EMIT -> ApplyStyleResult.DO_APPLY;
+          case Action.EnumAction.HIDE -> {
+            actionsStack.push(Action.EnumAction.HIDE);
+            yield ApplyStyleResult.DO_NOT_APPLY;
+          }
+          case Action.Ignore _, Action.Replace _, Action.Around _ -> ApplyStyleResult.DO_APPLY;
+          case Action.Collect(Node document, Node node, _) -> {
+            var newNode = document.createNode(name, attrs);
+            node.appendChild(newNode);
+            actionsStack.push(new Action.Collect(document, newNode, null));
+            yield ApplyStyleResult.DO_NOT_APPLY;
+          }
+        };
+      }
+
+      private void charactersAction(String content, Action action) {
+        switch (action) {
+          case Action.EnumAction.EMIT -> delegate.characters(content);
+          case Action.EnumAction.HIDE -> {}
+          case Action.Ignore _ -> {}
+          case Action.Replace _, Action.Around _ -> delegate.characters(content);
+          case Action.Collect(_, Node node, _) -> node.appendText(content);
+        }
+      }
+
+      private void endElementAction(String name, Action action) {
         switch (action) {
           case Action.EnumAction.EMIT -> delegate.endElement(name);
           case Action.EnumAction.HIDE -> {}
@@ -195,21 +230,12 @@ public class XML {
               consumer.accept(node);
             }
           }
-          case Action.Around(Consumer<? super NodeBuilder> postConsumer) -> {
+          case Action.Around(Consumer<? super NodeBuilder> postConsumer, String newName) -> {
             postConsumer.accept(delegatingNodeBuilder(this, actionsStack));
+            if (newName != null) {
+              delegate.endElement(newName);
+            }
           }
-        }
-      }
-
-      @Override
-      public void characters(String content) {
-        var action = Objects.requireNonNull(actionsStack.peek());
-        switch (action) {
-          case Action.EnumAction.EMIT -> delegate.characters(content);
-          case Action.EnumAction.HIDE -> {}
-          case Action.Ignore _ -> {}
-          case Action.Replace _, Action.Around _ -> delegate.characters(content);
-          case Action.Collect(_, Node node, _) -> node.appendText(content);
         }
       }
     };
