@@ -188,7 +188,14 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
           }
         }),
         "insert-title-text", Component.of((_, _, b) -> b.text(summary.title())),
-        "insert-infos", Component.of((_, _, b) -> infosOpt.ifPresent(b::include)),
+        "insert-infos", Component.of((_, _, b) -> {
+          infosOpt.ifPresent(node -> {
+            b.node("div", "class", "infos", c -> {
+              c.include(node)
+               .node("hr", "noshade", "true", "size", "1");
+            });
+          });
+        }),
         "insert-breadcrumb", Component.of((_, _, b) -> {
           b.node("span", "class", "bread-crumb", c -> {
             var names = breadcrumb.names();
