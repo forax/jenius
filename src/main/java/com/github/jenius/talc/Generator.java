@@ -192,7 +192,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
           infosOpt.ifPresent(node -> {
             b.node("div", "class", "infos", c -> {
               c.include(node)
-               .node("hr", "noshade", "true", "size", "1");
+               .node("hr");
             });
           });
         }),
