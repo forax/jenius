@@ -558,4 +558,30 @@ public class XMLTest {
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
+
+  @Test
+  public void aroundNode() throws IOException {
+    var input = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+         <bar>
+          This is a test
+         </bar>
+        </foo>
+        """;
+    var expected = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <foo>
+         <whizz></whizz>
+          This is a test
+         <baz></baz>
+        </foo>
+        """;
+    var writer = new StringWriter();
+    var style = ComponentStyle.of(
+        "bar", (_, attrs, b) ->
+        b.around(pre -> pre.node("whizz"), post -> post.node("baz")));
+    XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
+    assertSameDocument(expected, writer.toString());
+  }
 }

@@ -30,7 +30,20 @@ public class XML {
     }
   }
 
-
+  private static NodeBuilder delegatingNodeBuilder(FilterHandler filter, ArrayDeque<Action> actionStack) {
+    return new AbstractNodeBuilder(filter, actionStack) {
+      @Override
+      public NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(map);
+        Objects.requireNonNull(children);
+        filter.startElement(name, map);
+        children.accept(this);
+        filter.endElement(name);
+        return this;
+      }
+    };
+  }
 
   private static abstract class AbstractNodeBuilder implements NodeBuilder {
     private final FilterHandler filter;
@@ -39,21 +52,6 @@ public class XML {
     private AbstractNodeBuilder(FilterHandler filter, ArrayDeque<Action> actionStack) {
       this.filter = filter;
       this.actionStack = actionStack;
-    }
-
-    private NodeBuilder delegatingNodeBuilder() {
-      return new AbstractNodeBuilder(filter, actionStack) {
-        @Override
-        public NodeBuilder node(String name, Map<String, String> map, Consumer<? super NodeBuilder> children) {
-          Objects.requireNonNull(name);
-          Objects.requireNonNull(map);
-          Objects.requireNonNull(children);
-          filter.startElement(name, map);
-          children.accept(this);
-          filter.endElement(name);
-          return this;
-        }
-      };
     }
 
     @Override
@@ -83,13 +81,14 @@ public class XML {
       var ignore = (Action.Ignore) actionStack.pop();
       var document = Node.createDocument();
       var node = document.createNode(ignore.name, ignore.attrs);
-      actionStack.push(new Action.Collect(document, node, n -> consumer.accept(n, delegatingNodeBuilder())));
+      var action = new Action.Collect(document, node, n -> consumer.accept(n, delegatingNodeBuilder(filter, actionStack)));
+      actionStack.push(action);
     }
 
     @Override
     public final NodeBuilder fragment(Consumer<? super NodeBuilder> children) {
       Objects.requireNonNull(children);
-      children.accept(delegatingNodeBuilder());
+      children.accept(delegatingNodeBuilder(filter, actionStack));
       return this;
     }
 
@@ -98,6 +97,13 @@ public class XML {
       var _ = (Action.Ignore) actionStack.pop();
       actionStack.push(Action.EnumAction.HIDE);
     }
+
+    @Override
+    public final void around(Consumer<? super NodeBuilder> preBuilder, Consumer<? super NodeBuilder> postBuilder) {
+      var _ = (Action.Ignore) actionStack.pop();
+      preBuilder.accept(delegatingNodeBuilder(filter, actionStack));
+      actionStack.push(new Action.Around(postBuilder));
+    }
   }
 
   private sealed interface Action {
@@ -105,6 +111,7 @@ public class XML {
     record Ignore(String name, Map<String,String> attrs) implements Action {}
     record Replace(String newName) implements Action {}
     record Collect(Node document, Node node, Consumer<Node> consumer) implements Action {}
+    record Around(Consumer<? super NodeBuilder> post) implements Action {}
   }
 
   private static ContentHandler filter(ContentHandler delegate, ComponentStyle style) {
@@ -126,7 +133,7 @@ public class XML {
             delegate.startElement(name, map);
             var _ = (Action.Ignore) actionsStack.pop();
             actionsStack.push(new Action.Replace(name));
-            children.accept(super.delegatingNodeBuilder());
+            children.accept(delegatingNodeBuilder(super.filter, actionsStack));
             return this;
           }
         };
@@ -156,7 +163,7 @@ public class XML {
             actionsStack.push(Action.EnumAction.HIDE);
             return;
           }
-          case Action.Ignore _, Action.Replace _ -> {}
+          case Action.Ignore _, Action.Replace _, Action.Around _ -> {}
           case Action.Collect(Node document, Node node, _) -> {
             var newNode = document.createNode(name, attrs);
             node.appendChild(newNode);
@@ -188,6 +195,9 @@ public class XML {
               consumer.accept(node);
             }
           }
+          case Action.Around(Consumer<? super NodeBuilder> postConsumer) -> {
+            postConsumer.accept(delegatingNodeBuilder(this, actionsStack));
+          }
         }
       }
 
@@ -198,7 +208,7 @@ public class XML {
           case Action.EnumAction.EMIT -> delegate.characters(content);
           case Action.EnumAction.HIDE -> {}
           case Action.Ignore _ -> {}
-          case Action.Replace _ -> delegate.characters(content);
+          case Action.Replace _, Action.Around _ -> delegate.characters(content);
           case Action.Collect(_, Node node, _) -> node.appendText(content);
         }
       }
