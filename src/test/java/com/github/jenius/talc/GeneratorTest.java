@@ -34,7 +34,7 @@ public class GeneratorTest {
 
   @Test
   public void generateFile() throws URISyntaxException, IOException {
-    var template = path("root/template.html");
+    var template = path("templates/template.html");
     var root = path("root");
     var file = root.resolve("Java", "td01.xumlv");
     var output = root.resolveSibling("target").resolve("Java", mapping().apply("td01.xumlv"));
@@ -49,7 +49,7 @@ public class GeneratorTest {
 
   @Test
   public void generateIndex() throws URISyntaxException, IOException {
-    var template = path("root/template.html");
+    var template = path("templates/template.html");
     var root = path("root");
     var file = root.resolve("Java", "index.xumlv");
     var output = root.resolveSibling("target").resolve("Java", mapping().apply("index.xumlv"));
@@ -64,7 +64,7 @@ public class GeneratorTest {
 
   @Test
   public void generateRootIndex() throws URISyntaxException, IOException {
-    var template = path("root/template.html");
+    var template = path("templates/template.html");
     var root = path("root");
     var file = root.resolve("index.xumlv");
     var output = root.resolveSibling("target").resolve(mapping().apply("index.xumlv"));
@@ -121,7 +121,7 @@ public class GeneratorTest {
 
   @Test
   public void generateAll() throws URISyntaxException, IOException {
-    var template = path("root/template.html");
+    var template = path("templates/template.html");
     var dir = path("root");
     var dest = dir.resolveSibling("target");
     var privateDest = dir.resolveSibling("target").resolve("private");
@@ -130,7 +130,6 @@ public class GeneratorTest {
 
     var planFactory = new PlanFactory(mapping());
     var plan = planFactory.diff(dir, dest, privateDest);
-    plan.remove(template);
     //System.out.println(plan);
 
     var templateNode = DocumentManager.readPathAsDocument(template);

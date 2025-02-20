@@ -38,6 +38,22 @@ public class PlanTest {
   }
 
   @Test
+  public void shouldAddAndRemovePathMutatePlan() {
+    var srcPath1 = Path.of("/src/file1");
+    var srcPath2 = Path.of("/src/file2");
+    var plan = new Plan();
+    plan.add(srcPath1, new Status(ADDED, PUBLIC, srcPath1));
+    plan.add(srcPath2, new Status(ADDED, PUBLIC, srcPath2));
+    plan.remove(srcPath1);
+
+    assertAll(
+        () -> assertEquals(1, plan.statusMap().size()),
+        () -> assertFalse(plan.statusMap().containsKey(srcPath1)),
+        () -> assertTrue(plan.statusMap().containsKey(srcPath2))
+    );
+  }
+
+  @Test
   public void shouldMaintainInsertionOrderInToString() {
     var srcPath1 = Path.of("/src/file1");
     var srcPath2 = Path.of("/src/file2");
@@ -111,7 +127,6 @@ public class PlanTest {
 
     var plan2 = new Plan();
     plan2.add(root.resolve("index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("index.html")));
-    plan2.add(root.resolve("template.html"), new Status(ADDED, PUBLIC, dest.resolve("template.html")));
     plan2.add(root.resolve("Java"), new Status(ADDED, PUBLIC, dest.resolve("Java")));
     plan2.add(root.resolve("Java/index.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("Java/index.html")));
     plan2.add(root.resolve("Java/td01.xumlv"), new Status(ADDED, PUBLIC, dest.resolve("Java/td01.html")));
