@@ -124,6 +124,7 @@ public class GeneratorTest {
     var template = path("templates/template2.html");
     var dir = path("root2");
     var dest = dir.resolveSibling("target2");
+    Files.createDirectories(dest);
 
     var planFactory = new PlanFactory(mapping());
     var plan = planFactory.diff(dir, dest, null);
