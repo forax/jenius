@@ -120,6 +120,41 @@ public class GeneratorTest {
   }
 
   @Test
+  public void generateRoot2() throws URISyntaxException, IOException {
+    var template = path("templates/template2.html");
+    var dir = path("root2");
+    var dest = dir.resolveSibling("target2");
+
+    var planFactory = new PlanFactory(mapping());
+    var plan = planFactory.diff(dir, dest, null);
+
+    var templateNode = DocumentManager.readPathAsDocument(template);
+    var manager = new DocumentManager(dir);
+    var generator = new Generator(manager, mapping(), templateNode);
+
+    for(var entry : plan.statusMap().entrySet()) {
+      var path = entry.getKey();
+      for(var status : entry.getValue()) {
+        var state = status.state();
+        var destFile = status.destFile();
+        if (Files.isDirectory(path)) {
+          //System.out.println("create directory " + destFile);
+          Files.createDirectories(destFile);
+          continue;
+        }
+        var pathname = path.getFileName().toString();
+        if (!pathname.endsWith(".xumlv")) {
+          //System.out.println("copy to " + destFile);
+          Files.copy(path, destFile, StandardCopyOption.REPLACE_EXISTING);
+          continue;
+        }
+        //System.out.println("generate " + destFile + " " + state);
+        generator.generate(path, destFile, status.kind() == Status.Kind.PRIVATE);
+      }
+    }
+  }
+
+  @Test
   public void generateAll() throws URISyntaxException, IOException {
     var template = path("templates/template.html");
     var dir = path("root");

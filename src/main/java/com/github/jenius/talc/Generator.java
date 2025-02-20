@@ -34,7 +34,6 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
   private static ComponentStyle textDecoration() {
     return ComponentStyle.rename(
         "css-link", "link",
-        "item", "li",
 
         "underline", "u",
         "bold", "b",
@@ -71,18 +70,23 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
                     .text(attrs.getOrDefault("title", "")))
             )
         ),
-        "abstract", "subtitle", "paragraph", Component.of((name, attrs, b) ->
-            b.node("div", Map.of("class", name))
-        ),
+        "abstract", "subtitle", "paragraph", Component.of((name, attrs, b) -> {
+          var className =  attrs.getOrDefault("class", name);
+          b.node("div", Map.of("class", className));
+        }),
         "exercise", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "exercise"),c -> c
                 .node("h3", c2 -> c2
-                    .text("Exercice - " + attrs.getOrDefault("title", "")))
+                    .text(attrs.getOrDefault("title", "Exercice")))
             )
         ),
         "list", Component.of((_, attrs, b) ->
             b.node("ordered".equals(attrs.get("style")) ? "ol" : "ul")
         ),
+        "item", Component.of((name, attrs, b) -> {
+          var className =  attrs.getOrDefault("class", "item");
+          b.node("li", Map.of("class", className));
+        }),
 
         "infos", Component.of((_, _, b) ->
             b.node("table", "style", "font-size:100%", "width", "100%")),
@@ -118,11 +122,12 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
             })
         ),
 
-        "code", Component.of((_, _, b) ->
-            b.node("pre", "class", "code", "width", "100%")
-        ),
+        "code", Component.of((_, attrs, b) -> {
+          var className =  attrs.getOrDefault("class", "code");
+          b.node("pre", "class", className, "width", "100%");
+        }),
         "tt", Component.of((_, attrs, b) ->
-            b.node("span", Map.of("style", "font-family: monospace;"))
+            b.node("span", Map.of("class", "tt", "style", "font-family: monospace;"))
         ),
         "font", Component.of((_, attrs, b) ->
             b.node("span", "style", "color:" + attrs.getOrDefault("color", "black"))

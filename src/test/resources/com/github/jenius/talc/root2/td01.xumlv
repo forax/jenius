@@ -1,0 +1,353 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<!DOCTYPE td PUBLIC "-//University of Marne-la-Vallee//DTD tipi//EN"
+        "http://igm.univ-mlv.fr/ens/resources/tipi.dtd">
+<td>
+  <title>Thread, Runnable, join</title>
+
+  <exercise title="Hello Thread">
+    <paragraph>
+      On souhaite créer 4 threads (le nombre peut changer) qui exécutent un même
+      code affichant les nombres de 0 à 5&nbsp;000.
+    <br/>
+      Histoire de différencier les threads à l'affichage, chaque thread
+      affichera en plus du nombre courant un numéro (0 pour le premier thread,
+      1 pour la seconde, etc).
+    <br/>
+      Par exemple, on pourra obtenir ce type d'affichage :
+    </paragraph>
+
+    <code class="console">
+       ...
+       hello 0 1716
+       hello 0 1717
+       hello 1 1097
+       hello 1 1098
+       hello 1 1099
+       ...
+    </code>
+
+    <paragraph class="attention">
+      Attention : on vous demande de faire tout l'exercice <bold>sans utiliser les méthodes <tt>name</tt>, <tt>setName</tt> ou <tt>getName</tt></bold>.
+    </paragraph>
+
+    <list>
+      <item>
+        Rappeler à quoi sert un <tt>Runnable</tt>.
+        <answer>
+          <paragraph>
+            À spécifier du code (qui sera éxécuté par un ou des threads).
+          <br/>
+            !!! On ne dit pas qu'il est possible d'hériter de <tt>Thread</tt> car c'est crade!!!
+          <br/>
+            L'avantage de <tt>Runnable</tt> est que la classe peut alors étendre une autre
+            classe au choix ; en effet, java ne permettant pas l'héritage
+            multiple, si on définit une classe qui étend la classe
+            <tt>Thread</tt>, cela interdit d'étendre une autre classe.
+            D'autre part, cela peut permettre de faire exécuter un même <tt>Runnable</tt> à plusieurs threads.
+          </paragraph>
+        </answer>
+      </item><item>
+        Écrire, dans un premier temps, une classe <tt>HelloThread</tt> qui crée et démarre 4 threads (et faire en sorte qu'on puisse facilement en demander 150)
+        qui affichent les nombres de 0 à 5&nbsp;000  (sans le numéro unique par thread, donc).
+        <answer>
+          <!-- <a href="../src/fr/upem/concurrence/td01/HelloThread.java">HelloThread.java</a> -->
+          <code class="prettyprint">
+public class HelloThread {
+  public static void main(String[] args) {
+    var nbThreads = 4;
+    Runnable runnable = () -> {
+      for (var i = 0; i &lt; 5000; i++) {
+        System.out.println("hello " + i);
+      }
+    };
+
+    for (var i = 0; i &lt; nbThreads; i++) {
+      var thread = Thread.ofPlatform().start(runnable);
+    }
+  }
+}
+          </code>
+        </answer>
+      </item><item>
+        Exécutez le programme plusieurs fois, que remarque-t-on ? Puis, en regardant l'affichage (scroller au besoin), qu'y a-t-il de bizarre ?
+        Est-ce que tout ceci est bien normal ?
+        <answer>
+          <paragraph>
+            A priori, on ne contrôle rien. Le scheduler est préemptif et interrompt quand il veut.
+            Deux instructions de deux threads distincts n'ont a priori pas
+            d'ordre d'exécution à respecter (entre elles). C'est l'OS qui assure l'ordonnancement
+            des threads (quels threads vont sur quels cœurs).
+          </paragraph>
+        </answer>
+      </item><item>
+        Modifiez votre code pour afficher en plus le numéro de chaque thread (sans utiliser le numéro du thread, juste la variable de boucle).
+
+        <paragraph class="info">
+            <bold>Rappel :</bold>
+            À l'intérieur d'une lambda, il n'est possible d'utiliser des variables
+            déclarées à l'extérieur que si leur valeur ne change pas.
+        </paragraph>
+
+        <answer>
+          <code class="prettyprint">
+public class HelloThread {
+  public static void main(String[] args) {
+    var nbThreads = 4;
+
+    for (var j = 0; j < nbThreads; j++) {
+      var actuallyFinal = j;
+      Runnable runnable = () -> {
+        for (var i = 0; i < 5000; i++) {
+          System.out.println("hello " + actuallyFinal + " " + i);
+        }
+      };
+
+      var thread = Thread.ofPlatform().start(runnable);
+    }
+  }
+}
+            </code>
+        <br/>
+          Ou sinon, pour éviter de déclarer une variable intermédiaire :
+          <code class="prettyprint">
+public class HelloThread {
+  public static void main(String[] args) {
+    var nbThreads = 4;
+
+    IntStream.range(0, nbThreads).forEach(j -> {
+      Runnable runnable = () -> {
+        for (var i = 0; i < 5000; i++) {
+          System.out.println("hello " + j + " " + i);
+        }
+      };
+
+      var thread = Thread.ofPlatform().start(runnable);
+    });
+  }
+}
+            </code>
+        </answer>
+      </item>
+    </list>
+
+  </exercise>
+
+  <exercise title="This is the end, my friend ...">
+    <paragraph>
+      On souhaite afficher le message <tt>"le programme est fini"</tt>,
+      lorsque tous les threads ont fini de faire leurs calculs.
+    </paragraph>
+
+    <list>
+      <item>
+        Recopiez le programme de l'exercice précédent dans une nouvelle classe
+        <tt>HelloThreadJoin</tt> puis modifiez le pour que soit affiché le message <tt>"le programme est fini"</tt>
+        lorsque <bold>tous</bold> les threads ont fini leurs calculs.
+
+        <paragraph class="info">
+          Si vous cherchez comment attendre que des threads aient fini
+          d'exécuter leur <tt>Runnable</tt>, la méthode que vous cherchez est la méthode d'instance <tt>join</tt>.
+        <br/>
+          <code class="prettyprint">
+    Runnable runnable = () -> {
+      ...
+    };
+    var thread = Thread.ofPlatform().start(runnable);
+    thread.join();
+    System.out.println("Le thread a fini son Runnable");
+          </code>
+        </paragraph>
+        <paragraph class="attention">Attention : les threads doivent continuer à s'entrelacer !</paragraph>
+
+        <answer>
+          <code class="prettyprint">
+import java.util.stream.IntStream;
+
+public class HelloThreadJoin {
+  public static void main(String[] args) throws InterruptedException {
+    var nbThreads = 4;
+    var threadTab = new Thread[nbThreads];
+
+    IntStream.range(0, nbThreads).forEach(j -> {
+      Runnable runnable = () -> {
+        for (var i = 0; i < 5000; i++) {
+          System.out.println("hello " + j + " " + i);
+        }
+      };
+
+      threadTab[j] = Thread.ofPlatform().start(runnable);
+    });
+
+    for (var thread : threadTab) {
+      thread.join(); //attention à ne pas mettre le join dans la boucle précédente... on n'aurait pas d'entrelacement!
+    }
+
+    System.out.println("le programme est fini");
+  }
+}
+          </code>
+        </answer>
+      </item>
+    </list>
+  </exercise>
+
+
+  <exercise title="JConsole">
+    <paragraph>
+      On veut réaliser une classe <code>TurtleRace</code> dont un squellette du <code>main</code> est donné ci-dessous
+      (attention à la gestion de l'exception) :
+    </paragraph>
+    <code class="prettyprint">
+  public static void main(String[] args){
+    System.out.println("On your mark!");
+    Thread.sleep(15_000);
+    System.out.println("Go!");
+    int[] times = { 25_000, 10_000, 20_000, 5_000, 50_000, 60_000 };
+    ...
+  }
+    </code>
+
+    <list>
+      <item>
+        Réaliser la classe <tt>TurtleRace</tt>. Bien entendu, votre code doit fonctionner si l'on modifie le tableau <tt>times</tt>.
+          <answer>
+          <!-- <a href="../src/fr/upem/concurrence/TurtleRace.java">TurtleRace.java</a> -->
+          <code class="prettyprint">
+  public static void main(String[] args) {
+    System.out.println("On your mark!");
+    try {
+      Thread.sleep(15_000);
+    } catch (InterruptedException e) {
+      throw new AssertionError(e);
+    }
+    System.out.println("Go!");
+    int[] times = { 25_000, 10_000, 20_000, 5_000, 50_000, 60_000 };
+    for (var i = 0; i < times.length; i++) {
+      var id = i;
+      var turtle = Thread.ofPlatform().name("Turtle" + id).start(() -> {
+        try {
+          Thread.sleep(times[id]);
+        } catch (InterruptedException e) {
+          throw new AssertionError(e);
+        }
+        System.out.println("Turtle " + id + " has finished the race.");
+      });
+    }
+  }
+          </code>
+          Il faut avoir parlé de l'<code>AssertionError(e)</code> dans le cours...
+        </answer>
+       <br/>
+        Vous devriez avoir comme un affichage qui ressemble à ça :
+        <code class="console">
+          On your mark!
+          Go!
+          Turtle 3 has finished
+          Turtle 1 has finished
+          Turtle 2 has finished
+          Turtle 0 has finished
+          Turtle 4 has finished
+          Turtle 5 has finished
+        </code>
+        <paragraph class="attention">
+            Attention : le temps d’exécution la méthode <tt>sleep</tt> est dépendant du système.
+            Elle ne peut en aucun cas servir à garantir l'ordre d’exécution des threads.
+        </paragraph>
+      </item><br/><item>
+        Juste <bold>après</bold> avoir lancé la classe <tt>TurtleRace</tt>, lancez <tt>jconsole</tt> dans un terminal.
+        <code class="console">
+            $ /usr/local/apps/java19/bin/jconsole
+        </code>
+       <br/>
+        Il faut se connecter sur la classe <tt>TurtleRace</tt> et accepter le warning sur la connexion non-sécurisée.
+        Vous devriez avoir ce genre d'affichage :
+        <image src="./td01/jconsole.png" class="center"/>
+      </item><br/><item>
+        Observer l'évolution du nombre de threads. Que devient le thread <tt>main</tt> ? Quand est-ce que la JVM s'éteint ?
+        <answer>
+          <paragraph>
+            Le thread <tt>main</tt> se termine juste après avoir lancé les threads.
+            La JVM ne s'éteint pas, car elle attend que tous les threads <italic>non-deamon</italic> soient terminés.
+            Quand les threads <tt>Turtle</tt> sont terminés, il ne reste plus de threads <italic>non-deamon</italic> et la JVM s'éteint.
+          </paragraph>
+        </answer>
+      </item><br/><item>
+        Que se passerait-il si les threads "Turtle" étaient <tt>daemon</tt> ?
+      </item>
+    </list>
+  </exercise>
+
+  <exercise title="La magie de System.out.println">
+    <paragraph>
+      La classe <link href="./td01/HelloThreadBis.java">HelloThreadBis</link>
+      est une solution à la première question de l'exercice 1.
+      La seule différence notable avec votre solution devrait être qu'au lieu d'utiliser <tt>System.out.println</tt>,
+      nous avons recodé une fonction qui réalise l'affichage de la chaîne, caractère par caractère.
+    </paragraph>
+
+    <code class="prettyprint">
+  public static void println(String s){
+    for(var i = 0; i &lt; s.length(); i++){
+      System.out.print(s.charAt(i));
+    }
+    System.out.print("\n");
+  }
+    </code>
+
+    <list>
+      <item>
+        Exécuter la classe <tt>HelloThreadBis</tt> et comparer la sortie avec ce que vous avez obtenu
+        avec la classe <tt>HelloThread</tt> de l'exercice 1.
+      <br/>
+        Vous devriez voir dans la sortie de la classe <tt>HelloThreadBis</tt> des lignes comme celle-ci :
+        <code class="console">
+            hello 4725
+            hello 4726
+            hellhello 4889
+            hello 4890
+            hello 4891
+            hello 4892
+            hello 4893
+            hello 4894
+            hello 4895
+            hello 4896
+            hello 4897
+            hello 4898
+            hello 4899
+            hello 4900
+            hello 4901
+            hello 4902
+            hello 4903
+            o 4hello 4904
+            hello 4905
+        </code>
+      <br/>
+        Expliquer le comportement observé.
+        <answer>
+          Un thread est dé-schédulé après avoir écrit <tt>hell</tt>.
+          Puis un autre thread est schédulé et écrit à son tour. Le thread est re-schédulé et écrit <tt>o 4</tt>
+          puis il est dé-schédulé.
+        </answer>
+      </item><br/><item>
+        Pourquoi ce comportement n’apparaît-il pas quand on utilise <tt>System.out.println</tt> ?
+        <paragraph class="attention">
+            Vous pouvez regarder le code la méthode <tt>System.out.println</tt>
+        </paragraph>
+
+        <answer>
+          On peut bien être dé-schédulé pendant un <tt>System.out.println</tt> mais on conserve le lock sur
+          <tt>System.out</tt> si on n'a pas fini l'affichage. Du coup, aucun autre thread ne peut faire d'affichage avant que l'on ait fini.
+          <code class="prettyprint">
+  public void println(String x) {
+    synchronized (this) {
+      print(x);
+      newLine();
+    }
+  }
+          </code>
+        </answer>
+      </item>
+    </list>
+  </exercise>
+</td>
+

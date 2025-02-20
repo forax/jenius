@@ -1,0 +1,27 @@
+.exercise ol, .exercise ul {
+    padding-left: 0;
+    margin: 0;
+    counter-reset: my-item-counter;
+    list-style-type: none;
+}
+
+.exercise li::before {
+    margin-right: 8px;
+    padding-right: 6px;
+    padding-left: 6px;
+    background: #E95420;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #ffffff;
+    counter-increment: my-item-counter;
+    content: counter(my-item-counter);
+}
+
+.exercise li, .exercise div.paragraph {
+    margin-bottom: 1rem;
+}
+
+.exercise h3 {
+    font-size: 2rem;
+    margin: 1rem 0 2rem;
+}
