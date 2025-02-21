@@ -1,7 +1,11 @@
-$(document).ready(function() {
+function navbar() {
   // generate the navbar
   let navbar = $('.nav');
   let exercises = $('.exercise');
+  if (exercises.length == 0) {
+    navbar.remove();
+    return;
+  }
   exercises.each(function(index) {
     let exerciseNumber = index + 1;
     let exerciseId = `exercise${exerciseNumber}`;
@@ -13,7 +17,9 @@ $(document).ready(function() {
     navbar.append(itemHtml);
   });
   exercises.eq(0).addClass('active');
+}
 
+function ttAsCode() {
   // replace all element "tt" by an element "code"
   $('.tt').each(function() {
     let code = $('<code>');
@@ -23,6 +29,11 @@ $(document).ready(function() {
     code.html($(this).html());
     $(this).replaceWith(code);
   });
+}
+
+$(document).ready(function() {
+  navbar();
+  ttAsCode();
 });
 
 
