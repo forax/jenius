@@ -17,8 +17,13 @@
     content: counter(my-item-counter);
 }
 
-.exercise li, .exercise div.paragraph {
+.exercise li {
+    margin: unset;
     margin-bottom: 1rem;
+}
+
+.exercise li p {
+    margin-top: 1rem;
 }
 
 .exercise h3 {
