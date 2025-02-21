@@ -70,9 +70,12 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
                     .text(attrs.getOrDefault("title", "")))
             )
         ),
-        "abstract", "subtitle", "paragraph", Component.of((name, attrs, b) -> {
+        "abstract", "subtitle", Component.of((name, attrs, b) ->
+          b.node("div", Map.of("class", name))
+        ),
+        "paragraph", Component.of((name, attrs, b) -> {
           var className =  attrs.getOrDefault("class", name);
-          b.node("div", Map.of("class", className));
+          b.node("p", Map.of("class", className));
         }),
         "exercise", Component.of((_, attrs, b) ->
             b.node("div", Map.of("class", "exercise"),c -> c
