@@ -194,7 +194,7 @@ public class HelloThreadJoin {
 
   <exercise title="JConsole">
     <paragraph>
-      On veut réaliser une classe <code>TurtleRace</code> dont un squellette du <code>main</code> est donné ci-dessous
+      On veut réaliser une classe <tt>TurtleRace</tt> dont un squellette du <tt>main</tt> est donné ci-dessous
       (attention à la gestion de l'exception) :
     </paragraph>
     <code class="prettyprint">
@@ -253,7 +253,7 @@ public class HelloThreadJoin {
             Attention : le temps d’exécution la méthode <tt>sleep</tt> est dépendant du système.
             Elle ne peut en aucun cas servir à garantir l'ordre d’exécution des threads.
         </paragraph>
-      </item><br/><item>
+      </item><item>
         Juste <bold>après</bold> avoir lancé la classe <tt>TurtleRace</tt>, lancez <tt>jconsole</tt> dans un terminal.
         <code class="console">
             $ /usr/local/apps/java19/bin/jconsole
@@ -262,7 +262,7 @@ public class HelloThreadJoin {
         Il faut se connecter sur la classe <tt>TurtleRace</tt> et accepter le warning sur la connexion non-sécurisée.
         Vous devriez avoir ce genre d'affichage :
         <image src="./td01/jconsole.png" class="center"/>
-      </item><br/><item>
+      </item><item>
         Observer l'évolution du nombre de threads. Que devient le thread <tt>main</tt> ? Quand est-ce que la JVM s'éteint ?
         <answer>
           <paragraph>
@@ -271,7 +271,7 @@ public class HelloThreadJoin {
             Quand les threads <tt>Turtle</tt> sont terminés, il ne reste plus de threads <italic>non-deamon</italic> et la JVM s'éteint.
           </paragraph>
         </answer>
-      </item><br/><item>
+      </item><item>
         Que se passerait-il si les threads "Turtle" étaient <tt>daemon</tt> ?
       </item>
     </list>
@@ -328,7 +328,7 @@ public class HelloThreadJoin {
           Puis un autre thread est schédulé et écrit à son tour. Le thread est re-schédulé et écrit <tt>o 4</tt>
           puis il est dé-schédulé.
         </answer>
-      </item><br/><item>
+      </item><item>
         Pourquoi ce comportement n’apparaît-il pas quand on utilise <tt>System.out.println</tt> ?
         <paragraph class="attention">
             Vous pouvez regarder le code la méthode <tt>System.out.println</tt>
