@@ -1,7 +1,7 @@
 # jenius
 A small executable to publish HTML files defined using the .xumlv format
 
-### The .xumlv format
+### The .xumlv format (a course content description format)
 
 This document [tipi.md](tipi.md) explains the basics of the .xumlv format.
 
@@ -25,7 +25,7 @@ If you want to generate private files too, you can specify a private destination
   jenius sourceDir destinationDir privateDestinationDir template.html
 ```
 
-You have two examples of templates in the [templates](src/test/resources/com/github/jenius/talc/templates) directory.
+There are two examples of templates in the [templates](src/test/resources/com/github/jenius/talc/templates) directory.
 
 
 ### How to get it ?

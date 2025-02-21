@@ -1,6 +1,6 @@
-# Course Content Management Description Format
+# Course Content Description Format
 
-This DTD is designed for educational institutions managing course content.
+A format designed for educational institutions managing course content.
 It provides support for structured documents, indexes, exercises, team description, and various types of educational materials.
 The structure allows for both content organization and presentation formatting.
 
