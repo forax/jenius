@@ -12,7 +12,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 public record Generator(DocumentManager manager, UnaryOperator<String> mapping, Node template) {
   public Generator {
@@ -23,7 +24,22 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
 
   private static ComponentStyle answer(boolean activateAnswer) {
     Component component = activateAnswer
-        ? (_, _, b) -> b.node("div", Map.of("class", "answer"))
+        ? (_, _, b) -> {
+          b.around(
+            pre -> pre
+              .node("br")
+              .node("img",
+                  "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre.png",
+                  "style", "align:center; width:80%")
+              .node("br"),
+          post -> post
+              .node("br")
+              .node("img",
+                  "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre2.png",
+                  "style", "align:center; width:80%")
+              .node("br")
+          );
+        }
         : (_, _, b) -> b.hide();
     return ComponentStyle.of("answer", component);
   }
@@ -191,9 +207,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
             b.node("div", "class", "draft", c -> c.text("A venir ... "));
             return;
           }
-          for(var node : firstElement.childNodes()) {
-            b.include(node);
-          }
+          firstElement.childNodes().forEach(b::include);
         }),
         "insert-title-text", Component.of((_, _, b) -> b.text(summary.title())),
         "insert-infos", Component.of((_, _, b) -> {
@@ -226,7 +240,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
             c.node("a", "href", mapping.apply(refName), c2 ->
                 c2.text(refSummary.title()));
             c.node("br");
-            c.text(refSummary.subsections().stream().map(s -> "[" + s + "]").collect(Collectors.joining(" ")));
+            c.text(refSummary.subsections().stream().map(s -> "[" + s + "]").collect(joining(" ")));
           });
         }),
         "srcref", Component.of((_, attrs, b) -> {
