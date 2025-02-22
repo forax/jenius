@@ -29,15 +29,28 @@ public class Main {
   }
 
   private static void deleteFiles(Plan plan) throws IOException {
+    IOException ioException = null;
     for (var entry : plan.statusMap().reversed().entrySet()) {
       for(var status : entry.getValue()) {
         switch (status.state()) {
           case UPDATED, ADDED -> {}
           case REMOVED -> {
-            Files.delete(status.destFile());
+            try {
+              Files.delete(status.destFile());
+            } catch (IOException e) {
+              System.err.println("i/o error " + e.getMessage());
+              if (ioException == null) {
+                ioException = e;
+              } else {
+                ioException.addSuppressed(e);
+              }
+            }
           }
         }
       }
+    }
+    if (ioException != null) {
+      throw ioException;
     }
   }
 
