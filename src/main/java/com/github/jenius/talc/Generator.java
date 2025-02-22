@@ -25,20 +25,19 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
   private static ComponentStyle answer(boolean activateAnswer) {
     Component component = activateAnswer
         ? (_, _, b) -> {
-          b.around(
-            pre -> pre
-              .node("br")
-              .node("img",
-                  "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre.png",
-                  "style", "align:center; width:80%")
-              .node("br"),
-          post -> post
-              .node("br")
-              .node("img",
-                  "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre2.png",
-                  "style", "align:center; width:80%")
-              .node("br")
-          );
+          b.node("div", "class", "answer", c ->
+            c.around(
+              pre -> pre
+                .node("img",
+                    "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre.png",
+                    "style", "align:center; width:80%")
+                .node("br"),
+            post -> post
+                .node("br")
+                .node("img",
+                    "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre2.png",
+                    "style", "align:center; width:80%")
+          ));
         }
         : (_, _, b) -> b.hide();
     return ComponentStyle.of("answer", component);
