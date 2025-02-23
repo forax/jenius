@@ -134,6 +134,7 @@
                         <configuration>
                             <buildArgs combine.children="append">
                                 <buildArg>--static</buildArg>
+                                <buildArg>--libc=musl</buildArg>
                             </buildArgs>
                         </configuration>
                     </plugin>
