@@ -1,8 +1,5 @@
 package com.github.jenius.component;
 
-import org.jsoup.nodes.Attributes;
-import org.jsoup.nodes.Element;
-
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -23,7 +20,7 @@ public final class Node {
     private final org.jsoup.nodes.Attributes attributes;
     private final int size;
 
-    private AttributeMap(Attributes attributes) {
+    private AttributeMap(org.jsoup.nodes.Attributes attributes) {
       this.attributes = attributes;
       // jsoup bug: need to use asList().size() because size() count internal attributes too;
       this.size = attributes.isEmpty() ? 0 : attributes.asList().size();
@@ -110,7 +107,7 @@ public final class Node {
     Objects.requireNonNull(name);
     Objects.requireNonNull(attributes);
     Objects.requireNonNull(childNodes);
-    var element = new Element(name);
+    var element = new org.jsoup.nodes.Element(name);
     attributes.forEach(element::attr);
     List.copyOf(childNodes).forEach(n -> element.appendChild(n.jsoupNode));
     return new Node(element);
