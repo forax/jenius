@@ -30,7 +30,7 @@ There are two examples of templates in the [templates](src/test/resources/com/gi
 
 ### How to get it ?
 
-The [Releases](https://github.com/forax/jenius/releases) tab of Github contains several executables
+The [Releases](https://github.com/forax/jenius/releases) tab of GitHub contains several executables
 - the java jar file which run with `java -jar jenius-*.jar` (requires [Java 23+](https://www.oracle.com/java/technologies/downloads/)),
 - the executable for linux which run with `./jenius-*-linux` and
 - the executable for macOS which run with `./jenius-*-macos`.
