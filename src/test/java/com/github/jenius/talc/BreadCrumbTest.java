@@ -40,8 +40,8 @@ public class BreadCrumbTest {
     assertAll(
         () -> assertEquals(1, breadcrumb.names().size()),
         () -> assertEquals(1, breadcrumb.hrefs().size()),
-        () -> assertEquals("Home", breadcrumb.names().get(0)),
-        () -> assertEquals(Path.of("/"), breadcrumb.hrefs().get(0))
+        () -> assertEquals("Home", breadcrumb.names().getFirst()),
+        () -> assertEquals(Path.of("/"), breadcrumb.hrefs().getFirst())
     );
   }
 
