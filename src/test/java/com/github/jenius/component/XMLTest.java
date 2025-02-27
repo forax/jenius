@@ -227,10 +227,9 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of(
-        "foo", (_, _, b) -> {
+        "foo", (_, _, b) ->
           b.node("bar")
-              .text("This is a test");
-        }
+              .text("This is a test")
     );
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
