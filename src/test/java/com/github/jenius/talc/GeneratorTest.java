@@ -14,7 +14,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GeneratorTest {
   private static Path path(String filename) throws URISyntaxException {
-    return Path.of(GeneratorTest.class.getResource(filename).toURI());
+    var resource = GeneratorTest.class.getResource(filename);
+    assert resource != null;
+    return Path.of(resource.toURI());
   }
 
   private static UnaryOperator<String> mapping() {

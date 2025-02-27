@@ -50,7 +50,9 @@ public class SummaryTest {
   // FIXME, need to be move somewhere else !
   @Test
   public void validateTemplate() throws IOException, URISyntaxException {
-    var input = Files.readString(Path.of(SummaryTest.class.getResource("templates/template.html").toURI()));
+    var resource = SummaryTest.class.getResource("templates/template.html");
+    assert resource != null;
+    var input = Files.readString(Path.of(resource.toURI()));
     //assertSameDocument(input, input);
     var style = ComponentStyle.alwaysMatch(Component.identity());
     var node = XML.transform(new StringReader(input), style);

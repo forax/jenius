@@ -119,7 +119,9 @@ public class PlanTest {
 
   @Test
   public void shouldDiffStatusPlan() throws IOException, URISyntaxException {
-    var path = Path.of(PlanTest.class.getResource(".").toURI());
+    var resource = PlanTest.class.getResource(".");
+    assert resource != null;
+    var path = Path.of(resource.toURI());
     var planFactory = new PlanFactory(PlanTest::mapping);
     var root = path.resolve("root");
     var dest = path.resolve("dest");
@@ -142,7 +144,9 @@ public class PlanTest {
 
   @Test
   public void shouldDiffWithPrivateStatusPlan() throws IOException, URISyntaxException {
-    var path = Path.of(PlanTest.class.getResource(".").toURI());
+    var resource = PlanTest.class.getResource(".");
+    assert resource != null;
+    var path = Path.of(resource.toURI());
     var planFactory = new PlanFactory(PlanTest::mapping);
     var root = path.resolve("root/System");
     var dest = path.resolve("dest");
