@@ -2,7 +2,7 @@ function navbar() {
   // generate the navbar
   let navbar = $('.nav');
   let exercises = $('.exercise');
-  if (exercises.length == 0) {
+  if (exercises.length === 0) {
     navbar.remove();
     return;
   }
