@@ -24,7 +24,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
 
   private static ComponentStyle answer(boolean activateAnswer) {
     Component component = activateAnswer
-        ? (_, _, b) -> {
+        ? (_, _, b) ->
           b.node("div", "class", "answer", c ->
             c.around(
               pre -> pre
@@ -37,8 +37,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
                 .node("img",
                     "src", "http://igm.univ-mlv.fr/ens/resources/filaretordre2.png",
                     "style", "align:center; width:80%")
-          ));
-        }
+          ))
         : (_, _, b) -> b.hide();
     return ComponentStyle.of("answer", component);
   }
@@ -209,15 +208,15 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
           firstElement.childNodes().forEach(b::include);
         }),
         "insert-title-text", Component.of((_, _, b) -> b.text(summary.title())),
-        "insert-infos", Component.of((_, _, b) -> {
-          infosOpt.ifPresent(node -> {
-            b.node("div", "class", "infos", c -> {
+        "insert-infos", Component.of((_, _, b) ->
+          infosOpt.ifPresent(node ->
+            b.node("div", "class", "infos", c ->
               c.include(node)
-               .node("hr");
-            });
-          });
-        }),
-        "insert-breadcrumb", Component.of((_, _, b) -> {
+               .node("hr")
+            )
+          )
+        ),
+        "insert-breadcrumb", Component.of((_, _, b) ->
           b.node("span", "class", "bread-crumb", c -> {
             var names = breadcrumb.names();
             for(var i = 0; i < names.size(); i++) {
@@ -227,8 +226,8 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
               c.node("a", "href", href, c2 -> c2.text(title));
             }
             c.text(" :: ");
-          });
-        }),
+          })
+        ),
         "tdref", "dir", Component.of((_, attrs, b) -> {
           var name = attrs.getOrDefault("name", "");
           var refPath = filePath.resolveSibling(name);
