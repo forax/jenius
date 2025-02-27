@@ -4,11 +4,8 @@ import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 class CompactMap<K, V> extends AbstractMap<K, V> {
   private final LinkedHashMap<K, V> map;

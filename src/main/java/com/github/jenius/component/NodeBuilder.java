@@ -58,7 +58,7 @@ public interface NodeBuilder {
   /// Hide the current node and its content
   void hide();
 
-  /// Replace the current node (but not its content) by pre-nodes, follwoed by the content of the nodes
+  /// Replace the current node (but not its content) by pre-nodes, followed by the content of the nodes
   /// followed by the post-nodes
   void around(Consumer<? super NodeBuilder> preBuilder, Consumer<? super NodeBuilder> postBuilder);
 }
