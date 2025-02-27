@@ -136,7 +136,6 @@ public class GeneratorTest {
     for(var entry : plan.statusMap().entrySet()) {
       var path = entry.getKey();
       for(var status : entry.getValue()) {
-        var state = status.state();
         var destFile = status.destFile();
         if (Files.isDirectory(path)) {
           //System.out.println("create directory " + destFile);
@@ -175,7 +174,6 @@ public class GeneratorTest {
     for(var entry : plan.statusMap().entrySet()) {
       var path = entry.getKey();
       for(var status : entry.getValue()) {
-        var state = status.state();
         var destFile = status.destFile();
         if (Files.isDirectory(path)) {
           //System.out.println("create directory " + destFile);
