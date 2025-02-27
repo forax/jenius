@@ -94,10 +94,10 @@ public class HelloThread {
   public static void main(String[] args) {
     var nbThreads = 4;
 
-    for (var j = 0; j < nbThreads; j++) {
+    for (var j = 0; j &lt; nbThreads; j++) {
       var actuallyFinal = j;
       Runnable runnable = () -> {
-        for (var i = 0; i < 5000; i++) {
+        for (var i = 0; i &lt; 5000; i++) {
           System.out.println("hello " + actuallyFinal + " " + i);
         }
       };
@@ -116,7 +116,7 @@ public class HelloThread {
 
     IntStream.range(0, nbThreads).forEach(j -> {
       Runnable runnable = () -> {
-        for (var i = 0; i < 5000; i++) {
+        for (var i = 0; i &lt; 5000; i++) {
           System.out.println("hello " + j + " " + i);
         }
       };
@@ -170,7 +170,7 @@ public class HelloThreadJoin {
 
     IntStream.range(0, nbThreads).forEach(j -> {
       Runnable runnable = () -> {
-        for (var i = 0; i < 5000; i++) {
+        for (var i = 0; i &lt; 5000; i++) {
           System.out.println("hello " + j + " " + i);
         }
       };
@@ -222,7 +222,7 @@ public class HelloThreadJoin {
     }
     System.out.println("Go!");
     int[] times = { 25_000, 10_000, 20_000, 5_000, 50_000, 60_000 };
-    for (var i = 0; i < times.length; i++) {
+    for (var i = 0; i &lt; times.length; i++) {
       var id = i;
       var turtle = Thread.ofPlatform().name("Turtle" + id).start(() -> {
         try {
