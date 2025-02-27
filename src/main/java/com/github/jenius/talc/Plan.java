@@ -9,8 +9,6 @@ import java.util.SequencedMap;
 import java.util.stream.Collectors;
 
 public final class Plan {
-  public record Entry(Path path, Status status) {}
-
   private final LinkedHashMap<Path, List<Status>> planMap = new LinkedHashMap<>();
 
   @Override

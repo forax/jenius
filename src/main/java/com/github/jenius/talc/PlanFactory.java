@@ -25,12 +25,6 @@ public final class PlanFactory {
 
   private record Scan(Set<String> names, List<String> directories) { }
 
-  private static List<String> excludePRIVATEDirectories(Scan scan) {
-    return scan.directories.stream()
-        .filter(name -> !name.equals("PRIVATE"))
-        .toList();
-  }
-
   private static Scan scan(Path directory) throws IOException {
     try(var files = Files.list(directory)) {
       return files
