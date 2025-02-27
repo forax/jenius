@@ -1,7 +1,6 @@
 package com.github.jenius.talc;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
