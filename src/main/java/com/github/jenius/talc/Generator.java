@@ -84,7 +84,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
                     .text(attrs.getOrDefault("title", "")))
             )
         ),
-        "abstract", "subtitle", Component.of((name, attrs, b) ->
+        "abstract", "subtitle", Component.of((name, _, b) ->
           b.node("div", Map.of("class", name))
         ),
         "paragraph", Component.of((name, attrs, b) -> {
@@ -100,7 +100,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
         "list", Component.of((_, attrs, b) ->
             b.node("ordered".equals(attrs.get("style")) ? "ol" : "ul")
         ),
-        "item", Component.of((name, attrs, b) -> {
+        "item", Component.of((_, attrs, b) -> {
           var className =  attrs.getOrDefault("class", "item");
           b.node("li", Map.of("class", className));
         }),
@@ -143,7 +143,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
           var className =  attrs.getOrDefault("class", "code");
           b.node("pre", "class", className, "width", "100%");
         }),
-        "tt", Component.of((_, attrs, b) ->
+        "tt", Component.of((_, _, b) ->
             b.node("span", Map.of("class", "tt", "style", "font-family: monospace;"))
         ),
         "font", Component.of((_, attrs, b) ->
