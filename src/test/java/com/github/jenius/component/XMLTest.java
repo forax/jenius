@@ -306,7 +306,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of(
-        "bar", (name, attributes, nodeBuilder) -> {});
+        "bar", (_, _, _) -> {});
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
@@ -334,7 +334,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of(
-        "bar", (name, attributes, nodeBuilder) -> {});
+        "bar", (_, _, _) -> {});
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
@@ -458,7 +458,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of("foo",
-        (name, attrs, b) -> b.collect((n, b2) -> b2.node("whizz")));
+        (_, _, b) -> b.collect((_, b2) -> b2.node("whizz")));
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
   }
@@ -550,7 +550,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of(
-        "bar", (_, attrs, b) -> b.fragment(c -> {
+        "bar", (_, _, b) -> b.fragment(c -> {
           c.node("box");
           c.node("box");
         }));
@@ -578,7 +578,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of(
-        "bar", (_, attrs, b) ->
+        "bar", (_, _, b) ->
         b.around(pre -> pre.node("whizz"), post -> post.node("baz")));
     XML.transform(new StringReader(input), writer, XML.OutputKind.XML, style);
     assertSameDocument(expected, writer.toString());
@@ -606,7 +606,7 @@ public class XMLTest {
         """;
     var writer = new StringWriter();
     var style = ComponentStyle.of(
-        "bar", (_, attrs, b) ->
+        "bar", (_, _, b) ->
             b.node("baz", c ->
                 c.around(pre -> pre.node("whizz1"), post -> post.node("whizz2"))
             ));
