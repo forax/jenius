@@ -30,7 +30,7 @@ public interface ComponentStyle {
       for(;;) {
         if (i == nameOrComponents.length) {
           if (!names.isEmpty()) {
-            throw new IllegalArgumentException("names " + names + " with no componenet");
+            throw new IllegalArgumentException("names " + names + " with no component");
           }
           return of(map);
         }
