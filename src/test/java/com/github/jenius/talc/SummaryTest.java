@@ -30,8 +30,6 @@ public class SummaryTest {
         () -> assertEquals(List.of(), summary.subsections()),
         () -> assertEquals(0, summary.subsections().size())
     );
-
-
   }
 
   @Test
