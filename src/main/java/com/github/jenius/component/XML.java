@@ -100,6 +100,8 @@ public class XML {
 
     @Override
     public final void around(Consumer<? super NodeBuilder> preBuilder, Consumer<? super NodeBuilder> postBuilder) {
+      Objects.requireNonNull(preBuilder);
+      Objects.requireNonNull(postBuilder);
       var action = actionStack.pop();
       var newName = switch (action) {
         case Action.Ignore _ -> null;
