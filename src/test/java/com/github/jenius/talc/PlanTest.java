@@ -122,7 +122,7 @@ public class PlanTest {
     var resource = PlanTest.class.getResource(".");
     assert resource != null;
     var path = Path.of(resource.toURI());
-    var planFactory = new PlanFactory(PlanTest::mapping);
+    var planFactory = new PlanFactory(PlanTest::mapping, false);
     var root = path.resolve("root");
     var dest = path.resolve("dest");
     var plan = planFactory.diff(root, dest, null);
@@ -147,7 +147,7 @@ public class PlanTest {
     var resource = PlanTest.class.getResource(".");
     assert resource != null;
     var path = Path.of(resource.toURI());
-    var planFactory = new PlanFactory(PlanTest::mapping);
+    var planFactory = new PlanFactory(PlanTest::mapping, false);
     var root = path.resolve("root/System");
     var dest = path.resolve("dest");
     var privateDest = dest.resolve("private");

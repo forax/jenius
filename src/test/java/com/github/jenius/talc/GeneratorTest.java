@@ -128,7 +128,7 @@ public class GeneratorTest {
     var dest = dir.resolveSibling("target2");
     Files.createDirectories(dest);
 
-    var planFactory = new PlanFactory(mapping());
+    var planFactory = new PlanFactory(mapping(), true);
     var plan = planFactory.diff(dir, dest, null);
 
     var templateNode = DocumentManager.readPathAsDocument(template);
@@ -165,7 +165,7 @@ public class GeneratorTest {
     Files.createDirectories(dest);
     Files.createDirectories(privateDest);
 
-    var planFactory = new PlanFactory(mapping());
+    var planFactory = new PlanFactory(mapping(), true);
     var plan = planFactory.diff(dir, dest, privateDest);
     //System.out.println(plan);
 

@@ -18,9 +18,11 @@ import static com.github.jenius.talc.Status.State.UPDATED;
 
 public final class PlanFactory {
   private final UnaryOperator<String> mapping;
+  private final boolean alwaysUpdate;
 
-  public PlanFactory(UnaryOperator<String> mapping) {
+  public PlanFactory(UnaryOperator<String> mapping, boolean alwaysUpdate) {
     this.mapping = Objects.requireNonNull(mapping);
+    this.alwaysUpdate = alwaysUpdate;
   }
 
   private record Scan(Set<String> names, List<String> directories) { }
@@ -39,6 +41,12 @@ public final class PlanFactory {
     }
   }
 
+  private static boolean isMoreRecent(Path dirFile, Path destFile) throws IOException {
+    var dirFileTime = Files.getLastModifiedTime(dirFile);
+    var destFileTime = Files.getLastModifiedTime(destFile);
+    return destFileTime.compareTo(dirFileTime) < 0;
+  }
+
   private void diff(Path dir, Set<String> dirSet, Path dest, Set<String> destSet, Status.Kind kind, Plan plan) throws IOException {
     var dirSetMapped = new HashSet<>();
     for(var name : dirSet) {
@@ -47,9 +55,7 @@ public final class PlanFactory {
       var destFile = dest.resolve(destName);
       dirSetMapped.add(destName);
       if (destSet.contains(destName)) {
-        var dirFileTime = Files.getLastModifiedTime(dirFile);
-        var destFileTime = Files.getLastModifiedTime(destFile);
-        if (destFileTime.compareTo(dirFileTime) < 0) {  // use computeSHA1 depending on the kind of file ??
+        if (alwaysUpdate || isMoreRecent(dirFile, destFile)) {  // use computeSHA1 depending on the kind of file ??
           plan.add(dirFile, new Status(UPDATED, kind, destFile));
         }
       } else {

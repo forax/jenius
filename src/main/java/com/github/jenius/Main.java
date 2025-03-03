@@ -82,41 +82,17 @@ public class Main {
     }
   }
 
-  private record Config(Path dir, Path dest, Path privateDest, Path template) {}
-
-  private static Config parseConfig(String[] args) {
-    return switch (args.length) {
-      case 3 -> new Config(Path.of(args[0]), Path.of(args[1]), null, Path.of(args[2]));
-      case 4 -> new Config(Path.of(args[0]), Path.of(args[1]), Path.of(args[2]), Path.of(args[3]));
-      default -> {
-        System.err.println("""
-              jenius sourceDir destinationDir [privateDir] template.html
-              """);
-        System.exit(1);
-        throw new AssertionError();
-      }
-    };
-  }
-
-  private static void displayConfig(Config config) {
-    System.out.println("INFO config dir:" + config.dir.toAbsolutePath());
-    System.out.println("INFO config dest:" + config.dest.toAbsolutePath());
-    if (config.privateDest != null) {
-      System.out.println("INFO config private dest:" + config.privateDest.toAbsolutePath());
-    }
-    System.out.println("INFO config template:" + config.template.toAbsolutePath());
-  }
-
   public static void main(String[] args) throws IOException {
-    var config = parseConfig(args);
-    var mapping = (UnaryOperator<String>) Main::mapping;
-    var planFactory = new PlanFactory(mapping);
+    var config = Config.parseConfig(args);
+    config.displayConfig();
+    var force = config.force();
+    var dir = config.dir();
+    var dest = config.dest();
+    var privateDest = config.privateDest();
+    var template = config.template();
 
-    displayConfig(config);
-    var dir = config.dir;
-    var dest = config.dest;
-    var privateDest = config.privateDest;
-    var template = config.template;
+    var mapping = (UnaryOperator<String>) Main::mapping;
+    var planFactory = new PlanFactory(mapping, force);
 
     Node templateNode;
     try(var reader = Files.newBufferedReader(template)) {
