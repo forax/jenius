@@ -45,6 +45,8 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
   //
   // xmlv style is defined in tipi.dtd
   //
+  private static final ComponentStyle TEXT_DECORATION = textDecoration();
+
   private static ComponentStyle textDecoration() {
     return ComponentStyle.rename(
         "css-link", "link",
@@ -63,6 +65,8 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     );
   }
 
+  private static final ComponentStyle DEFAULT_STYLE = defaultStyle();
+
   private static ComponentStyle defaultStyle() {
     return ComponentStyle.of(
         "link", Component.of((_, attrs, b) -> {
@@ -73,26 +77,26 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
           b.node("a", "href", ref);
         }),
         "section", Component.of((_, attrs, b) ->
-          b.node("div", Map.of("class", "section"), c -> c
+          b.node("div", "class", "section", c -> c
               .node("h2", c2 -> c2
                   .text(attrs.getOrDefault("title", "")))
           )
         ),
         "subsection", Component.of((_, attrs, b) ->
-            b.node("div", Map.of("class", "subsection"), c -> c
+            b.node("div", "class", "subsection", c -> c
                 .node("h3", c2 -> c2
                     .text(attrs.getOrDefault("title", "")))
             )
         ),
         "abstract", "subtitle", Component.of((name, _, b) ->
-          b.node("div", Map.of("class", name))
+          b.node("div", "class", name)
         ),
         "paragraph", Component.of((name, attrs, b) -> {
           var className =  attrs.getOrDefault("class", name);
-          b.node("p", Map.of("class", className));
+          b.node("p", "class", className);
         }),
         "exercise", Component.of((_, attrs, b) ->
-            b.node("div", Map.of("class", "exercise"),c -> c
+            b.node("div", "class", "exercise",c -> c
                 .node("h3", c2 -> c2
                     .text(attrs.getOrDefault("title", "Exercice")))
             )
@@ -102,7 +106,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
         ),
         "item", Component.of((_, attrs, b) -> {
           var className =  attrs.getOrDefault("class", "item");
-          b.node("li", Map.of("class", className));
+          b.node("li", "class", className);
         }),
 
         "infos", Component.of((_, _, b) ->
@@ -144,7 +148,7 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
           b.node("pre", "class", className, "width", "100%");
         }),
         "tt", Component.of((_, _, b) ->
-            b.node("span", Map.of("class", "tt", "style", "font-family: monospace;"))
+            b.node("span", "class", "tt", "style", "font-family: monospace;")
         ),
         "font", Component.of((_, attrs, b) ->
             b.node("span", "style", "color:" + attrs.getOrDefault("color", "black"))
@@ -205,7 +209,9 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
             b.node("div", "class", "draft", c -> c.text("A venir ... "));
             return;
           }
-          firstElement.childNodes().forEach(b::include);
+          for (var node : firstElement.childNodes()) {
+            b.include(node);
+          }
         }),
         "insert-title-text", Component.of((_, _, b) -> b.text(summary.title())),
         "insert-infos", Component.of((_, _, b) ->
@@ -267,8 +273,8 @@ public record Generator(DocumentManager manager, UnaryOperator<String> mapping, 
     var style = ComponentStyle.anyMatch(
         answer(privateAccess),
         file(dirPath, privateAccess),
-        defaultStyle(),
-        textDecoration()
+        DEFAULT_STYLE,
+        TEXT_DECORATION
     );
     try(var writer = Files.newBufferedWriter(destPath)) {
       XML.transform(template, writer, XML.OutputKind.HTML, style);

@@ -126,8 +126,8 @@ public final class Node {
   public Optional<Node> getFirstElement() {
     return jsoupNode.childNodes().stream()
         .filter(n -> n instanceof org.jsoup.nodes.Element)
-        .map(Node::new)
-        .findFirst();
+        .findFirst()
+        .map(Node::new);
   }
 
   private static void toDebugString(org.jsoup.nodes.Node jsoupNode, StringBuilder builder, String indent) {
