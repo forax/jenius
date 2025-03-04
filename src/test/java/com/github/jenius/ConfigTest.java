@@ -14,6 +14,7 @@ public class ConfigTest {
 
     assertAll(
         () -> assertFalse(config.force()),
+        () -> assertFalse(config.watch()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertNull(config.privateDest()),
@@ -28,6 +29,7 @@ public class ConfigTest {
 
     assertAll(
         () -> assertFalse(config.force()),
+        () -> assertFalse(config.watch()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),
@@ -42,6 +44,22 @@ public class ConfigTest {
 
     assertAll(
         () -> assertTrue(config.force()),
+        () -> assertFalse(config.watch()),
+        () -> assertEquals(Path.of("source"), config.dir()),
+        () -> assertEquals(Path.of("dest"), config.dest()),
+        () -> assertNull(config.privateDest()),
+        () -> assertEquals(Path.of("template.html"), config.template())
+    );
+  }
+
+  @Test
+  public void parseConfigWithThreePathsAndWatch() {
+    var args = new String[]{"--watch", "source", "dest", "template.html"};
+    var config = Config.parseConfig(args);
+
+    assertAll(
+        () -> assertFalse(config.force()),
+        () -> assertTrue(config.watch()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertNull(config.privateDest()),
@@ -56,6 +74,7 @@ public class ConfigTest {
 
     assertAll(
         () -> assertTrue(config.force()),
+        () -> assertFalse(config.watch()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),
@@ -64,12 +83,28 @@ public class ConfigTest {
   }
 
   @Test
-  public void parseConfigWithForceOptionInDifferentPosition() {
-    var args = new String[]{"source", "--force", "dest", "private", "template.html"};
+  public void parseConfigWithFourPathsAndWatch() {
+    var args = new String[]{"--watch", "source", "dest", "private", "template.html"};
+    var config = Config.parseConfig(args);
+
+    assertAll(
+        () -> assertFalse(config.force()),
+        () -> assertTrue(config.watch()),
+        () -> assertEquals(Path.of("source"), config.dir()),
+        () -> assertEquals(Path.of("dest"), config.dest()),
+        () -> assertEquals(Path.of("private"), config.privateDest()),
+        () -> assertEquals(Path.of("template.html"), config.template())
+    );
+  }
+
+  @Test
+  public void parseConfigWithForceAndWatchOptionInDifferentPositions() {
+    var args = new String[]{"source", "--force", "dest", "--watch", "private", "template.html"};
     var config = Config.parseConfig(args);
 
     assertAll(
         () -> assertTrue(config.force()),
+        () -> assertTrue(config.watch()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),
