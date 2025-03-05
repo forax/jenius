@@ -40,7 +40,7 @@ record Config(boolean force, boolean watch, boolean serve, Path dir, Path dest, 
               options:
                 --force generate all files (independently of if a source file is updated)
                 --watch wait and generate in loop when at least one of the source files change
-                --serve run a http server on port 8080 to see the destinationDir (or the privateDir if specified)
+                --serve run an http server on port 8080 to see the destinationDir (or the privateDir)
             """);
         System.exit(1);
         throw new AssertionError();

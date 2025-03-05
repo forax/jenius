@@ -30,7 +30,7 @@ If you want to generate private files too, you can specify a private destination
 Options are
  - `--force` ask to update all the files even if there is no change
  - `--watch` go into a loop that watch for filesystem changes and rerun jenius on them
-
+ - `--serve` run an http server on port 8080 to see the destinationDir (or the privateDestinationDir)
 
 ### How to get it ?
 
