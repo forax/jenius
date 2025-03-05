@@ -15,6 +15,7 @@ public class ConfigTest {
     assertAll(
         () -> assertFalse(config.force()),
         () -> assertFalse(config.watch()),
+        () -> assertFalse(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertNull(config.privateDest()),
@@ -30,6 +31,7 @@ public class ConfigTest {
     assertAll(
         () -> assertFalse(config.force()),
         () -> assertFalse(config.watch()),
+        () -> assertFalse(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),
@@ -45,6 +47,7 @@ public class ConfigTest {
     assertAll(
         () -> assertTrue(config.force()),
         () -> assertFalse(config.watch()),
+        () -> assertFalse(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertNull(config.privateDest()),
@@ -60,6 +63,23 @@ public class ConfigTest {
     assertAll(
         () -> assertFalse(config.force()),
         () -> assertTrue(config.watch()),
+        () -> assertFalse(config.serve()),
+        () -> assertEquals(Path.of("source"), config.dir()),
+        () -> assertEquals(Path.of("dest"), config.dest()),
+        () -> assertNull(config.privateDest()),
+        () -> assertEquals(Path.of("template.html"), config.template())
+    );
+  }
+
+  @Test
+  public void parseConfigWithThreePathsAndServe() {
+    var args = new String[]{"--serve", "source", "dest", "template.html"};
+    var config = Config.parseConfig(args);
+
+    assertAll(
+        () -> assertFalse(config.force()),
+        () -> assertFalse(config.watch()),
+        () -> assertTrue(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertNull(config.privateDest()),
@@ -75,6 +95,7 @@ public class ConfigTest {
     assertAll(
         () -> assertTrue(config.force()),
         () -> assertFalse(config.watch()),
+        () -> assertFalse(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),
@@ -90,6 +111,23 @@ public class ConfigTest {
     assertAll(
         () -> assertFalse(config.force()),
         () -> assertTrue(config.watch()),
+        () -> assertFalse(config.serve()),
+        () -> assertEquals(Path.of("source"), config.dir()),
+        () -> assertEquals(Path.of("dest"), config.dest()),
+        () -> assertEquals(Path.of("private"), config.privateDest()),
+        () -> assertEquals(Path.of("template.html"), config.template())
+    );
+  }
+
+  @Test
+  public void parseConfigWithFourPathsAndServe() {
+    var args = new String[]{"--serve", "source", "dest", "private", "template.html"};
+    var config = Config.parseConfig(args);
+
+    assertAll(
+        () -> assertFalse(config.force()),
+        () -> assertFalse(config.watch()),
+        () -> assertTrue(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),
@@ -99,12 +137,13 @@ public class ConfigTest {
 
   @Test
   public void parseConfigWithForceAndWatchOptionInDifferentPositions() {
-    var args = new String[]{"source", "--force", "dest", "--watch", "private", "template.html"};
+    var args = new String[]{"source", "--force", "dest", "--watch", "private", "--serve", "template.html"};
     var config = Config.parseConfig(args);
 
     assertAll(
         () -> assertTrue(config.force()),
         () -> assertTrue(config.watch()),
+        () -> assertTrue(config.serve()),
         () -> assertEquals(Path.of("source"), config.dir()),
         () -> assertEquals(Path.of("dest"), config.dest()),
         () -> assertEquals(Path.of("private"), config.privateDest()),

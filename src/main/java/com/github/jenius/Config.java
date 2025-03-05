@@ -4,10 +4,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-record Config(boolean force, boolean watch, Path dir, Path dest, Path privateDest, Path template) {
+record Config(boolean force, boolean watch, boolean serve, Path dir, Path dest, Path privateDest, Path template) {
   private static final class Option {
     private boolean force;
     private boolean watch;
+    private boolean serve;
   }
 
   private static void parseArgs(String[] args, List<Path> files, Option option) {
@@ -15,13 +16,14 @@ record Config(boolean force, boolean watch, Path dir, Path dest, Path privateDes
       switch (arg) {
         case "--force" -> option.force = true;
         case "--watch" -> option.watch = true;
+        case "--serve" -> option.serve = true;
         default -> files.add(Path.of(arg));
       }
     }
   }
 
   private static Config newConfig(Option option, Path dir, Path dest, Path privateDest, Path template) {
-    return new Config(option.force, option.watch, dir, dest, privateDest, template);
+    return new Config(option.force, option.watch, option.serve, dir, dest, privateDest, template);
   }
 
   public static Config parseConfig(String[] args) {
@@ -38,6 +40,7 @@ record Config(boolean force, boolean watch, Path dir, Path dest, Path privateDes
               options:
                 --force generate all files (independently of if a source file is updated)
                 --watch wait and generate in loop when at least one of the source files change
+                --serve run a http server on port 8080 to see the destinationDir (or the privateDir if specified)
             """);
         System.exit(1);
         throw new AssertionError();

@@ -7,8 +7,12 @@ import com.github.jenius.talc.Generator;
 import com.github.jenius.talc.Plan;
 import com.github.jenius.talc.PlanFactory;
 import com.github.jenius.talc.Status;
+import com.sun.net.httpserver.SimpleFileServer;
+import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -166,16 +170,39 @@ public class Main {
     }
   }
 
+  private static boolean isPrivateDestIncluded(Path dest, Path privateDest) {
+    for(var path : privateDest) {
+      if (path.equals(dest)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static void serve(Path dest, Path privateDest) {
+    var serveDir = privateDest == null ? dest : isPrivateDestIncluded(dest, privateDest) ? dest : privateDest;
+    var localHost = InetAddress.getLoopbackAddress();
+    var socketAddress = new InetSocketAddress(localHost, 8080);
+    var rootDir = serveDir.toAbsolutePath();
+    var server = SimpleFileServer.createFileServer(socketAddress, rootDir, OutputLevel.NONE);
+    server.start();
+    System.out.println("serve " + rootDir + " at http://" + localHost.getHostAddress() + ':' + socketAddress.getPort());
+  }
+
   public static void main(String[] args) throws IOException, InterruptedException {
     var config = Config.parseConfig(args);
     config.displayConfig();
     var force = config.force();
     var watch = config.watch();
+    var serve = config.serve();
     var dir = config.dir();
     var dest = config.dest();
     var privateDest = config.privateDest();
     var template = config.template();
 
+    if (serve) {
+      serve(dest, privateDest);
+    }
     if (watch) {
       watch(force, dir, dest, privateDest, template);
       return;
