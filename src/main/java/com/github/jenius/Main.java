@@ -157,7 +157,7 @@ public class Main {
       }
       directories = new HashSet<>();
 
-      System.out.println("wait watching " + dir);
+      System.out.println("wait while watching " + dir);
       WatchKey key;
       try {
         key = watchService.take();
