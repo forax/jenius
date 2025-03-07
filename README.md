@@ -1,11 +1,11 @@
 # jenius
-A small executable to publish HTML files defined using the .xumlv format
+A small executable that generate course content
 
-### The .xumlv format (a course content description format)
+### Course content Description
 
-This document [tipi.md](tipi.md) explains the basics of the .xumlv format.
+The course content is described using the .xumlv format (an XML format) defined by the [tipi DTD](tipi.dtd).
 
-Here is the full DTD: [tipi.dtd](tipi.dtd)
+The document [tipi.md](tipi.md) explains the basics of the .xumlv format.
 
 ### How it works ?
 
