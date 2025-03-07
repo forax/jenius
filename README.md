@@ -1,7 +1,7 @@
 # jenius
 A small executable that generate course content
 
-### Course content Description
+### Course content description
 
 The course content is described using the .xumlv format (an XML format) defined by the [tipi DTD](tipi.dtd).
 
