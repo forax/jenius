@@ -35,7 +35,7 @@ Options are
 ### How to get it ?
 
 The [Releases](https://github.com/forax/jenius/releases) tab of GitHub contains several executables
-- the java jar file which run with `java -jar jenius-*.jar` (requires [Java 23+](https://www.oracle.com/java/technologies/downloads/)),
+- the java jar file which run with `java -jar jenius-*.jar` (requires [Java 25+](https://www.oracle.com/java/technologies/downloads/)),
 - the executable for linux which run with `./jenius-*-linux` and
 - the executable for macOS which run with `./jenius-*-macos`.
 

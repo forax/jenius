@@ -23,11 +23,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up GraalVM 23
+    - name: Set up GraalVM 25
       uses: graalvm/setup-graalvm@v1
       with:
         version: 'latest'
-        java-version: '23'
+        java-version: '25'
         cache: maven
 
     - name: Get VERSION from tag or commit
